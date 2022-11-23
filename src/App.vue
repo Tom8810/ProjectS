@@ -57,9 +57,7 @@
           <option value="-" selected>-</option>
         </select>
         <h4>単位</h4>
-        <select name="unit" id="unit" v-model="unit" @focus="appendUnit()">
-          <option value="リットル">リットル</option>
-        </select>
+        <input type="text" v-model="unit" />
       </div>
       <div class="discription-area">
         <h3>推測の根拠</h3>
@@ -124,28 +122,6 @@ export default {
             this.discription = "";
         }
       },
-      appendUnit: function () {
-        const unit = document.getElementById("unit");
-        if (this.firstData == "" || this.secondData == "") {
-          alert("データを選択してください");
-          unit.blur();
-        } else {
-          this.index1 = this.data.findIndex((e) => {
-            return e.title == this.firstData;
-          });
-          const optionForUnit1 = document.createElement("option");
-          optionForUnit1.value = optionForUnit1.textContent =
-            this.data[this.index1].unit;
-          unit.append(optionForUnit1);
-          this.index2 = this.data.findIndex((e) => {
-            return e.title == this.secondData;
-          });
-          const optionForUnit2 = document.createElement("option");
-          optionForUnit2.value = optionForUnit2.textContent =
-            this.data[this.index2].unit;
-          unit.append(optionForUnit2);
-        }
-      },
       async start() {
         const start = document.getElementById("start");
         start.classList.add("hidden");
@@ -202,8 +178,38 @@ export default {
           kana: this.kana,
           latest: this.result,
           unit: this.unit,
+          parent: [
+            {
+              data: this.data[this.index1].title,
+              parent: this.data[this.index1].parent,
+            },
+            {
+              data: this.data[this.index2].title,
+              parent: this.data[this.index2].parent,
+            },
+          ],
         };
         await setDoc(doc(lef, `${this.title}`), postData);
+      },
+      initialize: function () {
+        this.num1 = "";
+        this.num2 = "";
+        this.operator = "";
+        this.result = "";
+        this.roundedResult = "";
+        this.isAlreadyStarted = false;
+        this.index1 = 0;
+        this.index2 = 0;
+        this.title = "";
+        this.kana = "";
+        this.unit = "";
+        this.firstData = "";
+        this.secondData = "";
+        this.discription = "";
+        this.intResult = 0;
+        this.digit = 0;
+        this.roundDigit = 0;
+        this.digitUnitCoeff = 0;
       },
     };
   },
@@ -306,13 +312,9 @@ export default {
       while (resultBox.lastChild) {
         resultBox.removeChild(resultBox.lastChild);
       }
-      this.num1 = "";
-      this.num2 = "";
-      this.operator = "";
-      console.log(this.data);
+      this.initialize();
     },
     test_auto() {
-      this.start();
       this.title = "秋田県の醬油消費量";
       this.kana = "あきたけんのしょうゆしょうひりょう";
       this.firstData = "秋田県の人口データ";
