@@ -8,7 +8,7 @@
       </button>
       <button @click="goDB">データを閲覧する</button>
     </div>
-    <div class="main">
+    <div class="main" v-if="isGuess">
       <button @click="test_auto">自動</button>
       <div class="title-area">
         <h3>推測テーマ</h3>
@@ -60,7 +60,33 @@
       </div>
       <button @click="next">次へ</button>
     </div>
-    <div></div>
+    <div class="main" v-else>
+      <div class="search">
+        <h2>データベース</h2>
+        <h3>検索</h3>
+        <input type="text" v-model="searchText" @input="search" />
+        <h3>データ一覧</h3>
+        <div id="search-result-box"></div>
+      </div>
+      <div class="data">
+        <div>
+          <h2>タイトル</h2>
+          <h3 class="data-title" id="data-title">a</h3>
+        </div>
+        <div>
+          <h2>データ</h2>
+          <h3 class="data-num" id="data-num">0</h3>
+        </div>
+        <div>
+          <h2>データの次数</h2>
+          <h3 class="data-degree" id="data-degree">0</h3>
+        </div>
+        <div>
+          <h2>親データ</h2>
+          <div id="parent-data-box"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -73,6 +99,7 @@ import sideBarVue from "@/components/SideBar.vue";
 export default {
   data() {
     return {
+      isGuess: true,
       num1: "",
       num2: "",
       operator: "",
@@ -92,6 +119,9 @@ export default {
       digit: 0,
       roundDigit: 0,
       digitUnitCoeff: 0,
+      searchText: "",
+      likedGuess: [],
+      databaseBox: [],
       changeDisc: function () {
         switch (this.operator) {
           case "+":
@@ -124,14 +154,16 @@ export default {
         });
         const data1 = document.getElementById("data1");
         const data2 = document.getElementById("data2");
-        this.data.forEach((e) => {
-          const optionFor1 = document.createElement("option");
-          const optionFor2 = document.createElement("option");
-          optionFor1.value = optionFor2.value = e.title;
-          optionFor1.textContent = optionFor2.textContent = e.title;
-          data1.append(optionFor1);
-          data2.append(optionFor2);
-        });
+        if (this.isGuess) {
+          this.data.forEach((e) => {
+            const optionFor1 = document.createElement("option");
+            const optionFor2 = document.createElement("option");
+            optionFor1.value = optionFor2.value = e.title;
+            optionFor1.textContent = optionFor2.textContent = e.title;
+            data1.append(optionFor1);
+            data2.append(optionFor2);
+          });
+        }
       },
       round: function () {
         this.roundedResult =
@@ -170,16 +202,18 @@ export default {
           kana: this.kana,
           latest: this.result,
           unit: this.unit,
-          parent: [
-            {
+          parent: {
+            parent1: {
               data: this.data[this.index1].title,
               parent: this.data[this.index1].parent,
             },
-            {
+            parent2: {
               data: this.data[this.index2].title,
               parent: this.data[this.index2].parent,
             },
-          ],
+            operator: this.operator,
+          },
+          likedCount: 0,
         };
         await setDoc(doc(lef, `${this.title}`), postData);
       },
@@ -203,11 +237,65 @@ export default {
         this.roundDigit = 0;
         this.digitUnitCoeff = 0;
       },
+      showResult: function () {
+        const searchResultBox = document.getElementById("search-result-box");
+        while (searchResultBox.lastChild) {
+          searchResultBox.lastChild.remove();
+        }
+        let arr = this.data;
+        this.databaseBox.forEach((e) => {
+          const resultCard = document.createElement("div");
+          resultCard.textContent = e.title;
+          let element = e;
+          resultCard.onclick = function goResult() {
+            const parentDataBox = document.getElementById("parent-data-box");
+            while (parentDataBox.lastChild) {
+              parentDataBox.lastChild.remove();
+            }
+            const dataTitle = document.getElementById("data-title");
+            const dataNum = document.getElementById("data-num");
+            const dataDegree = document.getElementById("data-degree");
+            dataTitle.textContent = element.title;
+            dataNum.textContent = element.latest + element.unit;
+            dataDegree.textContent = element.degree;
+            if ("parent1" in element.parent) {
+              let parent1Title = element.parent.parent1.data;
+              let parent2Title = element.parent.parent2.data;
+              let parentOpe = element.parent.operator;
+              const parentData1 = document.createElement("h3");
+              const parentOperator = document.createElement("h3");
+              const parentData2 = document.createElement("h3");
+              parentData1.textContent = parent1Title;
+              parentOperator.textContent = parentOpe;
+              parentData2.textContent = parent2Title;
+              parentData1.onclick = () => {
+                let i = arr.findIndex((ele) => {
+                  return ele.title === parent1Title;
+                });
+                element = arr[i];
+                goResult();
+              };
+              parentData2.onclick = () => {
+                let i = arr.findIndex((ele) => {
+                  return ele.title === parent2Title;
+                });
+                element = arr[i];
+                goResult();
+              };
+              parentDataBox.append(parentData1, parentOperator, parentData2);
+            }
+          };
+          searchResultBox.append(resultCard);
+        });
+      },
     };
   },
   methods: {
-    goDB() {
-      this.start();
+    async goDB() {
+      this.isGuess = false;
+      await this.start();
+      this.databaseBox = this.data.slice(0, 3);
+      this.showResult();
     },
     isKana() {
       let tmp = [];
@@ -308,6 +396,14 @@ export default {
         resultBox.removeChild(resultBox.lastChild);
       }
       this.initialize();
+    },
+    search() {
+      this.databaseBox = this.data.filter((e) => {
+        return (
+          e.title.includes(this.searchText) || e.kana.includes(this.searchText)
+        );
+      });
+      this.showResult();
     },
     test_auto() {
       this.title = "秋田県の醬油消費量";
