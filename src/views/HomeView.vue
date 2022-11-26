@@ -1,9 +1,19 @@
 <template>
   <appBarVue />
   <div class="body">
-    <sideBarVue />
+    <aside class="side-bar">
+      <div class="favorite-post" id="favorite-post">
+        <h4>評価の高い推測</h4>
+      </div>
+      <div class="new-post" id="new-post">
+        <h4>新着の推測</h4>
+      </div>
+      <div class="ad">
+        <h4>その他</h4>
+      </div>
+    </aside>
     <div class="start" id="start">
-      <button @click="start" :style="{ disabled: isAlreadyStarted }">
+      <button @click.once="start" :style="{ disabled: isAlreadyStarted }">
         データを推測する
       </button>
       <button @click="goDB">データを閲覧する</button>
@@ -81,6 +91,10 @@
           <h2>データの次数</h2>
           <h3 class="data-degree" id="data-degree">0</h3>
         </div>
+        <div id="judge-area">
+          <h2>この推測を評価する</h2>
+          <div id="judge"></div>
+        </div>
         <div>
           <h2>親データ</h2>
           <div id="parent-data-box"></div>
@@ -91,10 +105,16 @@
 </template>
 
 <script>
-import { collection, getDocs, setDoc, doc } from "@firebase/firestore";
+import {
+  collection,
+  getDocs,
+  setDoc,
+  doc,
+  updateDoc,
+  increment,
+} from "@firebase/firestore";
 import { db } from "@/firebase.js";
 import appBarVue from "@/components/AppBar.vue";
-import sideBarVue from "@/components/SideBar.vue";
 
 export default {
   data() {
@@ -120,7 +140,8 @@ export default {
       roundDigit: 0,
       digitUnitCoeff: 0,
       searchText: "",
-      likedGuess: [],
+      goodGuess: [],
+      badGuess: [],
       databaseBox: [],
       changeDisc: function () {
         switch (this.operator) {
@@ -164,6 +185,7 @@ export default {
             data2.append(optionFor2);
           });
         }
+        this.showGuess();
       },
       round: function () {
         this.roundedResult =
@@ -245,6 +267,7 @@ export default {
         let arr = this.data;
         this.databaseBox.forEach((e) => {
           const resultCard = document.createElement("div");
+          const judge = document.getElementById("judge");
           resultCard.textContent = e.title;
           let element = e;
           resultCard.onclick = function goResult() {
@@ -252,12 +275,39 @@ export default {
             while (parentDataBox.lastChild) {
               parentDataBox.lastChild.remove();
             }
+            judge.style.display = "block";
+            while (judge.lastChild) {
+              judge.lastChild.remove();
+            }
             const dataTitle = document.getElementById("data-title");
             const dataNum = document.getElementById("data-num");
             const dataDegree = document.getElementById("data-degree");
             dataTitle.textContent = element.title;
             dataNum.textContent = element.latest + element.unit;
             dataDegree.textContent = element.degree;
+            if (element.degree > 1) {
+              const goodButton = document.createElement("div");
+              goodButton.textContent = "正しいと思う";
+              const badButton = document.createElement("div");
+              badButton.textContent = "正しくないと思う";
+              goodButton.onclick = async () => {
+                this.goodGuess.push(element);
+                judge.style.display = "none";
+                const ref = doc(db, "data", `${element.title}`);
+                await updateDoc(ref, {
+                  likedCount: increment(1),
+                });
+              };
+              badButton.onclick = async () => {
+                this.badGuess.push(element);
+                judge.style.display = "none";
+                const ref = doc(db, "data", `${element.title}`);
+                await updateDoc(ref, {
+                  likedCount: increment(-1),
+                });
+              };
+              judge.append(goodButton, badButton);
+            }
             if ("parent1" in element.parent) {
               let parent1Title = element.parent.parent1.data;
               let parent2Title = element.parent.parent2.data;
@@ -284,9 +334,30 @@ export default {
               };
               parentDataBox.append(parentData1, parentOperator, parentData2);
             }
-          };
+          }.bind(this);
           searchResultBox.append(resultCard);
         });
+      },
+      showGuess: function () {
+        const favoritePost = document.getElementById("favorite-post");
+        const favData = document.createElement("div");
+        let max = 0;
+        this.data.forEach((e) => {
+          if (e.likedCount > max) {
+            max = e.likedCount;
+          }
+        });
+        let index = this.data.findIndex((e) => {
+          return e.likedCount === max;
+        });
+        favData.textContent = this.data[index].title;
+        favData.onclick = () => {
+          this.isGuess = false;
+          this.databaseBox = this.data.slice(0, 3);
+          console.log("favoData clicked!");
+          this.showResult();
+        };
+        favoritePost.append(favData);
       },
     };
   },
@@ -414,7 +485,7 @@ export default {
       this.unit = "リットル";
     },
   },
-  components: { appBarVue, sideBarVue },
+  components: { appBarVue },
 };
 </script>
 
@@ -471,7 +542,7 @@ export default {
   height: 85vh;
   width: 20vw;
 }
-.favorite {
+.favorite-post {
   background-color: #bebeff;
   height: 40vh;
 }
@@ -479,7 +550,7 @@ export default {
   background-color: #beffbe;
   height: 15vh;
 }
-.new {
+.new-post {
   background-color: #ffbebe;
   height: 30vh;
 }
