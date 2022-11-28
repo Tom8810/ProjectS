@@ -1,9 +1,19 @@
 <template>
   <appBarVue />
   <div class="body">
-    <sideBarVue />
+    <aside class="side-bar">
+      <div class="favorite-post" id="favorite-post">
+        <h4>評価の高い推測</h4>
+      </div>
+      <div class="new-post" id="new-post">
+        <h4>新着の推測</h4>
+      </div>
+      <div class="ad">
+        <h4>その他</h4>
+      </div>
+    </aside>
     <div class="start" id="start">
-      <button @click="start" :style="{ disabled: isAlreadyStarted }">
+      <button @click.once="start" :style="{ disabled: isAlreadyStarted }">
         データを推測する
       </button>
       <button @click="goDB">データを閲覧する</button>
@@ -61,14 +71,14 @@
       <button @click="next">次へ</button>
     </div>
     <div class="main" v-else>
-      <div class="search">
+      <div class="search" id="search">
         <h2>データベース</h2>
         <h3>検索</h3>
         <input type="text" v-model="searchText" @input="search" />
         <h3>データ一覧</h3>
         <div id="search-result-box"></div>
       </div>
-      <div class="data">
+      <div class="data-area" id="data-area">
         <div>
           <h2>タイトル</h2>
           <h3 class="data-title" id="data-title">a</h3>
@@ -81,20 +91,31 @@
           <h2>データの次数</h2>
           <h3 class="data-degree" id="data-degree">0</h3>
         </div>
+        <div id="judge-area">
+          <h2>この推測を評価する</h2>
+          <div id="judge"></div>
+        </div>
         <div>
           <h2>親データ</h2>
           <div id="parent-data-box"></div>
         </div>
+        <button @click="goSearch">戻る</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { collection, getDocs, setDoc, doc } from "@firebase/firestore";
+import {
+  collection,
+  getDocs,
+  setDoc,
+  doc,
+  updateDoc,
+  increment,
+} from "@firebase/firestore";
 import { db } from "@/firebase.js";
 import appBarVue from "@/components/AppBar.vue";
-import sideBarVue from "@/components/SideBar.vue";
 
 export default {
   data() {
@@ -120,7 +141,9 @@ export default {
       roundDigit: 0,
       digitUnitCoeff: 0,
       searchText: "",
-      likedGuess: [],
+      goodGuess: [],
+      badGuess: [],
+      showingData: "",
       databaseBox: [],
       changeDisc: function () {
         switch (this.operator) {
@@ -145,24 +168,27 @@ export default {
         }
       },
       async start() {
-        const start = document.getElementById("start");
-        start.classList.add("hidden");
-        this.isAlreadyStarted = true;
-        const snapshot = await getDocs(collection(db, "data"));
-        snapshot.forEach((e) => {
-          this.data.push(e.data());
-        });
-        const data1 = document.getElementById("data1");
-        const data2 = document.getElementById("data2");
-        if (this.isGuess) {
-          this.data.forEach((e) => {
-            const optionFor1 = document.createElement("option");
-            const optionFor2 = document.createElement("option");
-            optionFor1.value = optionFor2.value = e.title;
-            optionFor1.textContent = optionFor2.textContent = e.title;
-            data1.append(optionFor1);
-            data2.append(optionFor2);
+        if (this.data.length === 0) {
+          const start = document.getElementById("start");
+          start.classList.add("hidden");
+          this.isAlreadyStarted = true;
+          const snapshot = await getDocs(collection(db, "data"));
+          snapshot.forEach((e) => {
+            this.data.push(e.data());
           });
+          const data1 = document.getElementById("data1");
+          const data2 = document.getElementById("data2");
+          if (this.isGuess) {
+            this.data.forEach((e) => {
+              const optionFor1 = document.createElement("option");
+              const optionFor2 = document.createElement("option");
+              optionFor1.value = optionFor2.value = e.title;
+              optionFor1.textContent = optionFor2.textContent = e.title;
+              data1.append(optionFor1);
+              data2.append(optionFor2);
+            });
+          }
+          this.showGuess();
         }
       },
       round: function () {
@@ -214,6 +240,7 @@ export default {
             operator: this.operator,
           },
           likedCount: 0,
+          date: Date.now(),
         };
         await setDoc(doc(lef, `${this.title}`), postData);
       },
@@ -237,66 +264,155 @@ export default {
         this.roundDigit = 0;
         this.digitUnitCoeff = 0;
       },
-      showResult: function () {
+      goData: function () {
+        const search = document.getElementById("search");
+        const dataArea = document.getElementById("data-area");
+        search.style.display = "none";
+        dataArea.style.display = "block";
         const searchResultBox = document.getElementById("search-result-box");
         while (searchResultBox.lastChild) {
           searchResultBox.lastChild.remove();
         }
-        let arr = this.data;
+        const resultCard = document.createElement("div");
+        const judge = document.getElementById("judge");
+        const parentDataBox = document.getElementById("parent-data-box");
+        const dataTitle = document.getElementById("data-title");
+        const dataNum = document.getElementById("data-num");
+        const dataDegree = document.getElementById("data-degree");
+        while (parentDataBox.lastChild) {
+          parentDataBox.lastChild.remove();
+        }
+        judge.style.display = "block";
+        while (judge.lastChild) {
+          judge.lastChild.remove();
+        }
+        dataTitle.textContent = this.showingData.title;
+        dataNum.textContent = this.showingData.latest + this.showingData.unit;
+        dataDegree.textContent = this.showingData.degree;
+        if (this.showingData.degree > 1) {
+          const goodButton = document.createElement("div");
+          goodButton.textContent = "正しいと思う";
+          const badButton = document.createElement("div");
+          badButton.textContent = "正しくないと思う";
+          goodButton.onclick = async () => {
+            this.goodGuess.push(this.showingData);
+            judge.style.display = "none";
+            const ref = doc(db, "data", `${this.showingData.title}`);
+            await updateDoc(ref, {
+              likedCount: increment(1),
+            });
+          };
+          badButton.onclick = async () => {
+            this.badGuess.push(this.showingData);
+            judge.style.display = "none";
+            const ref = doc(db, "data", `${this.showingData.title}`);
+            await updateDoc(ref, {
+              likedCount: increment(-1),
+            });
+          };
+          judge.append(goodButton, badButton);
+        }
+        if ("parent1" in this.showingData.parent) {
+          let parent1Title = this.showingData.parent.parent1.data;
+          let parent2Title = this.showingData.parent.parent2.data;
+          let parentOpe = this.showingData.parent.operator;
+          const parentData1 = document.createElement("h3");
+          const parentOperator = document.createElement("h3");
+          const parentData2 = document.createElement("h3");
+          parentData1.textContent = parent1Title;
+          parentOperator.textContent = parentOpe;
+          parentData2.textContent = parent2Title;
+          parentData1.onclick = () => {
+            let i = this.data.findIndex((ele) => {
+              return ele.title === parent1Title;
+            });
+            this.showingData = this.data[i];
+            this.goData();
+          };
+          parentData2.onclick = () => {
+            let i = this.data.findIndex((ele) => {
+              return ele.title === parent2Title;
+            });
+            this.showingData = this.data[i];
+            this.goData();
+          };
+          parentDataBox.append(parentData1, parentOperator, parentData2);
+        }
+        searchResultBox.append(resultCard);
+      },
+      goSearch: function () {
+        const search = document.getElementById("search");
+        const dataArea = document.getElementById("data-area");
+        search.style.display = "block";
+        dataArea.style.display = "none";
+        const searchResultBox = document.getElementById("search-result-box");
+        while (searchResultBox.lastChild) {
+          searchResultBox.lastChild.remove();
+        }
         this.databaseBox.forEach((e) => {
           const resultCard = document.createElement("div");
           resultCard.textContent = e.title;
-          let element = e;
-          resultCard.onclick = function goResult() {
-            const parentDataBox = document.getElementById("parent-data-box");
-            while (parentDataBox.lastChild) {
-              parentDataBox.lastChild.remove();
-            }
-            const dataTitle = document.getElementById("data-title");
-            const dataNum = document.getElementById("data-num");
-            const dataDegree = document.getElementById("data-degree");
-            dataTitle.textContent = element.title;
-            dataNum.textContent = element.latest + element.unit;
-            dataDegree.textContent = element.degree;
-            if ("parent1" in element.parent) {
-              let parent1Title = element.parent.parent1.data;
-              let parent2Title = element.parent.parent2.data;
-              let parentOpe = element.parent.operator;
-              const parentData1 = document.createElement("h3");
-              const parentOperator = document.createElement("h3");
-              const parentData2 = document.createElement("h3");
-              parentData1.textContent = parent1Title;
-              parentOperator.textContent = parentOpe;
-              parentData2.textContent = parent2Title;
-              parentData1.onclick = () => {
-                let i = arr.findIndex((ele) => {
-                  return ele.title === parent1Title;
-                });
-                element = arr[i];
-                goResult();
-              };
-              parentData2.onclick = () => {
-                let i = arr.findIndex((ele) => {
-                  return ele.title === parent2Title;
-                });
-                element = arr[i];
-                goResult();
-              };
-              parentDataBox.append(parentData1, parentOperator, parentData2);
-            }
+          resultCard.onclick = () => {
+            this.showingData = e;
+            this.goData();
           };
           searchResultBox.append(resultCard);
         });
+      }.bind(this),
+      showGuess: function () {
+        // favorite
+        const favoritePost = document.getElementById("favorite-post");
+        const favData = document.createElement("div");
+        let maxFav = 0;
+        this.data.forEach((e) => {
+          if (e.likedCount > maxFav) {
+            maxFav = e.likedCount;
+          }
+        });
+        let indexFav = this.data.findIndex((e) => {
+          return e.likedCount === maxFav;
+        });
+        favData.textContent = this.data[indexFav].title;
+        favData.onclick = async () => {
+          this.isGuess = false;
+          this.showingData = this.data[indexFav];
+          this.databaseBox = this.data.slice(0, 3);
+          await this.start();
+          await this.goData();
+        };
+        favoritePost.append(favData);
+
+        // new
+        const newPost = document.getElementById("new-post");
+        const newData = document.createElement("div");
+        let maxNew = 0;
+        this.data.forEach((e) => {
+          if (e.date > maxNew) {
+            maxNew = e.date;
+          }
+        });
+        let indexNew = this.data.findIndex((e) => {
+          return e.date === maxNew;
+        });
+        newData.textContent = this.data[indexNew].title;
+        newData.onclick = async () => {
+          this.isGuess = false;
+          this.showingData = this.data[indexNew];
+          this.databaseBox = this.data.slice(0, 3);
+          await this.start();
+          await this.goData();
+        };
+        newPost.append(newData);
+      },
+      goDB: async function () {
+        this.isGuess = false;
+        await this.start();
+        this.databaseBox = this.data.slice(0, 3);
+        this.goSearch();
       },
     };
   },
   methods: {
-    async goDB() {
-      this.isGuess = false;
-      await this.start();
-      this.databaseBox = this.data.slice(0, 3);
-      this.showResult();
-    },
     isKana() {
       let tmp = [];
 
@@ -381,7 +497,7 @@ export default {
             this.round();
             resultJa.textContent = this.roundedResult + this.unit;
           } else {
-            alert("これ以上正確度を下げられません。");
+            alert("これ以上正確度を上げられません。");
           }
         };
         resultJa.textContent = this.roundedResult + this.unit;
@@ -403,7 +519,7 @@ export default {
           e.title.includes(this.searchText) || e.kana.includes(this.searchText)
         );
       });
-      this.showResult();
+      this.goSearch();
     },
     test_auto() {
       this.title = "秋田県の醬油消費量";
@@ -414,7 +530,7 @@ export default {
       this.unit = "リットル";
     },
   },
-  components: { appBarVue, sideBarVue },
+  components: { appBarVue },
 };
 </script>
 
@@ -465,13 +581,17 @@ export default {
   width: 80vw;
 }
 
+.data-area {
+  display: none;
+}
+
 /* サイド */
 .side-bar {
   background-color: #bebebe;
   height: 85vh;
   width: 20vw;
 }
-.favorite {
+.favorite-post {
   background-color: #bebeff;
   height: 40vh;
 }
@@ -479,7 +599,7 @@ export default {
   background-color: #beffbe;
   height: 15vh;
 }
-.new {
+.new-post {
   background-color: #ffbebe;
   height: 30vh;
 }
