@@ -240,6 +240,7 @@ export default {
             operator: this.operator,
           },
           likedCount: 0,
+          date: Date.now(),
         };
         await setDoc(doc(lef, `${this.title}`), postData);
       },
@@ -362,24 +363,46 @@ export default {
         // favorite
         const favoritePost = document.getElementById("favorite-post");
         const favData = document.createElement("div");
-        let max = 0;
+        let maxFav = 0;
         this.data.forEach((e) => {
-          if (e.likedCount > max) {
-            max = e.likedCount;
+          if (e.likedCount > maxFav) {
+            maxFav = e.likedCount;
           }
         });
-        let index = this.data.findIndex((e) => {
-          return e.likedCount === max;
+        let indexFav = this.data.findIndex((e) => {
+          return e.likedCount === maxFav;
         });
-        favData.textContent = this.data[index].title;
+        favData.textContent = this.data[indexFav].title;
         favData.onclick = async () => {
           this.isGuess = false;
-          this.showingData = this.data[index];
+          this.showingData = this.data[indexFav];
           this.databaseBox = this.data.slice(0, 3);
           await this.start();
           await this.goData();
         };
         favoritePost.append(favData);
+
+        // new
+        const newPost = document.getElementById("new-post");
+        const newData = document.createElement("div");
+        let maxNew = 0;
+        this.data.forEach((e) => {
+          if (e.date > maxNew) {
+            maxNew = e.date;
+          }
+        });
+        let indexNew = this.data.findIndex((e) => {
+          return e.date === maxNew;
+        });
+        newData.textContent = this.data[indexNew].title;
+        newData.onclick = async () => {
+          this.isGuess = false;
+          this.showingData = this.data[indexNew];
+          this.databaseBox = this.data.slice(0, 3);
+          await this.start();
+          await this.goData();
+        };
+        newPost.append(newData);
       },
       goDB: async function () {
         this.isGuess = false;
@@ -474,7 +497,7 @@ export default {
             this.round();
             resultJa.textContent = this.roundedResult + this.unit;
           } else {
-            alert("これ以上正確度を下げられません。");
+            alert("これ以上正確度を上げられません。");
           }
         };
         resultJa.textContent = this.roundedResult + this.unit;
