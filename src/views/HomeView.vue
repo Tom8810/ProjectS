@@ -423,7 +423,7 @@ export default {
         this.kana = "";
       }
     },
-    calc() {
+    async calc() {
       if (
         this.title == "" ||
         this.kana == "" ||
@@ -458,47 +458,74 @@ export default {
           default:
             alert("error");
         }
-        this.intResult = Math.round(this.result);
-        this.digit = this.intResult.toString().length;
-        if (this.digit <= 4) {
-          this.roundDigit = this.digit - 3;
-          this.round();
+        let checkIndex = this.data.findIndex((e) => {
+          return e.latest === this.result;
+        });
+        if (
+          checkIndex !== -1 &&
+          this.operator === this.data[checkIndex].parent.operator
+        ) {
+          let checkArr1 = [this.firstData, this.secondData];
+          let checkArr2 = [
+            this.data[checkIndex].parent.parent1.data,
+            this.data[checkIndex].parent.parent2.data,
+          ];
+          checkArr1 = checkArr1.filter((e) => {
+            return !checkArr2.some((ele) => {
+              return ele === e;
+            });
+          });
+          console.log(checkArr1);
+          if (checkArr1.length === 0) {
+            this.showingData = this.data[checkIndex];
+            this.isGuess = false;
+            await this.start();
+            this.goData();
+            alert("既にデータがあります。");
+          }
         } else {
-          this.roundDigit = this.digit - 2;
-          while (this.digitUnitCoeff < this.digit - 4) {
-            this.digitUnitCoeff = this.digitUnitCoeff + 4;
+          this.intResult = Math.round(this.result);
+          this.digit = this.intResult.toString().length;
+          if (this.digit <= 4) {
+            this.roundDigit = this.digit - 3;
+            this.round();
+          } else {
+            this.roundDigit = this.digit - 2;
+            while (this.digitUnitCoeff < this.digit - 4) {
+              this.digitUnitCoeff = this.digitUnitCoeff + 4;
+            }
+            this.round();
           }
-          this.round();
+          const resultBox = document.getElementById("result-box");
+          const resultJa = document.createElement("h1");
+          const resultNum = document.createElement("h5");
+          const digitUpButton = document.createElement("button");
+          digitUpButton.textContent = "ざっくり度アップ";
+          const digitDownButton = document.createElement("button");
+          digitDownButton.textContent = "正確度アップ";
+          digitUpButton.onclick = () => {
+            if (this.roundDigit <= this.digit - 2) {
+              this.roundDigit = this.roundDigit + 1;
+              this.round();
+              resultJa.textContent = this.roundedResult + this.unit;
+            } else {
+              alert("これ以上ざっくり度を上げられません。");
+            }
+          };
+          digitDownButton.onclick = () => {
+            if (this.roundDigit >= 1) {
+              this.roundDigit = this.roundDigit - 1;
+              this.round();
+              resultJa.textContent = this.roundedResult + this.unit;
+            } else {
+              alert("これ以上正確度を上げられません。");
+            }
+          };
+          resultJa.textContent = this.roundedResult + this.unit;
+          resultNum.textContent = this.result;
+          resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
+          this.dataPost();
         }
-        const resultBox = document.getElementById("result-box");
-        const resultJa = document.createElement("h1");
-        const resultNum = document.createElement("h5");
-        const digitUpButton = document.createElement("button");
-        digitUpButton.textContent = "ざっくり度アップ";
-        const digitDownButton = document.createElement("button");
-        digitDownButton.textContent = "正確度アップ";
-        digitUpButton.onclick = () => {
-          if (this.roundDigit <= this.digit - 2) {
-            this.roundDigit = this.roundDigit + 1;
-            this.round();
-            resultJa.textContent = this.roundedResult + this.unit;
-          } else {
-            alert("これ以上ざっくり度を上げられません。");
-          }
-        };
-        digitDownButton.onclick = () => {
-          if (this.roundDigit >= 1) {
-            this.roundDigit = this.roundDigit - 1;
-            this.round();
-            resultJa.textContent = this.roundedResult + this.unit;
-          } else {
-            alert("これ以上正確度を上げられません。");
-          }
-        };
-        resultJa.textContent = this.roundedResult + this.unit;
-        resultNum.textContent = this.result;
-        resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
-        this.dataPost();
       }
     },
     next() {
