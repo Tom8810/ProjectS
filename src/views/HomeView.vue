@@ -33,28 +33,28 @@
       </div>
       <div class="calc-area">
         <h3>使用データ</h3>
-        <select
-          name="data1"
-          id="data1"
+        <input
+          type="text"
+          autocomplete="on"
+          list="data1"
           v-model="firstData"
           @change="changeDisc()"
-        >
-          <option value="-" selected>-</option>
-        </select>
+        />
+        <datalist id="data1"> </datalist>
         <select name="post-particle" v-model="operator" @change="changeDisc()">
           <option value="+">+</option>
           <option value="-">-</option>
           <option value="×">×</option>
           <option value="÷">÷</option>
         </select>
-        <select
-          name="data2"
-          id="data2"
+        <input
+          type="text"
+          autocomplete="on"
+          list="data2"
           v-model="secondData"
           @change="changeDisc()"
-        >
-          <option value="-" selected>-</option>
-        </select>
+        />
+        <datalist id="data2"> </datalist>
         <h4>単位</h4>
         <input type="text" v-model="unit" />
       </div>
@@ -74,9 +74,15 @@
       <div class="search" id="search">
         <h2>データベース</h2>
         <h3>検索</h3>
-        <input type="text" v-model="searchText" @input="search" />
-        <h3>データ一覧</h3>
-        <div id="search-result-box"></div>
+        <input
+          type="text"
+          v-model="searchText"
+          autocomplete="on"
+          list="search-result-box"
+        />
+        <datalist id="search-result-box"></datalist>
+        <button @click="textDelete">削除</button>
+        <button @click="showData">表示</button>
       </div>
       <div class="data-area" id="data-area">
         <div>
@@ -145,6 +151,7 @@ export default {
       badGuess: [],
       showingData: "",
       databaseBox: [],
+      alreadyGoSearch: false,
       changeDisc: function () {
         switch (this.operator) {
           case "+":
@@ -176,9 +183,9 @@ export default {
           snapshot.forEach((e) => {
             this.data.push(e.data());
           });
-          const data1 = document.getElementById("data1");
-          const data2 = document.getElementById("data2");
           if (this.isGuess) {
+            const data1 = document.getElementById("data1");
+            const data2 = document.getElementById("data2");
             this.data.forEach((e) => {
               const optionFor1 = document.createElement("option");
               const optionFor2 = document.createElement("option");
@@ -269,11 +276,6 @@ export default {
         const dataArea = document.getElementById("data-area");
         search.style.display = "none";
         dataArea.style.display = "block";
-        const searchResultBox = document.getElementById("search-result-box");
-        while (searchResultBox.lastChild) {
-          searchResultBox.lastChild.remove();
-        }
-        const resultCard = document.createElement("div");
         const judge = document.getElementById("judge");
         const parentDataBox = document.getElementById("parent-data-box");
         const dataTitle = document.getElementById("data-title");
@@ -338,26 +340,21 @@ export default {
           };
           parentDataBox.append(parentData1, parentOperator, parentData2);
         }
-        searchResultBox.append(resultCard);
       },
       goSearch: function () {
         const search = document.getElementById("search");
         const dataArea = document.getElementById("data-area");
         search.style.display = "block";
         dataArea.style.display = "none";
-        const searchResultBox = document.getElementById("search-result-box");
-        while (searchResultBox.lastChild) {
-          searchResultBox.lastChild.remove();
+        if (!this.alreadyGoSearch) {
+          const searchResultBox = document.getElementById("search-result-box");
+          this.data.forEach((e) => {
+            const resultCard = document.createElement("option");
+            resultCard.textContent = e.title;
+            resultCard.value = e.title;
+            searchResultBox.append(resultCard);
+          });
         }
-        this.databaseBox.forEach((e) => {
-          const resultCard = document.createElement("div");
-          resultCard.textContent = e.title;
-          resultCard.onclick = () => {
-            this.showingData = e;
-            this.goData();
-          };
-          searchResultBox.append(resultCard);
-        });
       }.bind(this),
       showGuess: function () {
         // favorite
@@ -376,7 +373,6 @@ export default {
         favData.onclick = async () => {
           this.isGuess = false;
           this.showingData = this.data[indexFav];
-          this.databaseBox = this.data.slice(0, 3);
           await this.start();
           await this.goData();
         };
@@ -398,7 +394,6 @@ export default {
         newData.onclick = async () => {
           this.isGuess = false;
           this.showingData = this.data[indexNew];
-          this.databaseBox = this.data.slice(0, 3);
           await this.start();
           await this.goData();
         };
@@ -407,8 +402,8 @@ export default {
       goDB: async function () {
         this.isGuess = false;
         await this.start();
-        this.databaseBox = this.data.slice(0, 3);
         this.goSearch();
+        this.alreadyGoSearch = true;
       },
     };
   },
@@ -513,13 +508,17 @@ export default {
       }
       this.initialize();
     },
-    search() {
-      this.databaseBox = this.data.filter((e) => {
-        return (
-          e.title.includes(this.searchText) || e.kana.includes(this.searchText)
-        );
+    showData() {
+      let index = 0;
+      index = this.data.findIndex((e) => {
+        return e.title == this.searchText;
       });
-      this.goSearch();
+      this.searchText = "";
+      this.showingData = this.data[index];
+      this.goData();
+    },
+    textDelete() {
+      this.searchText = "";
     },
     test_auto() {
       this.title = "秋田県の醬油消費量";
