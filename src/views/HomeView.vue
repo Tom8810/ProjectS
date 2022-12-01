@@ -37,10 +37,14 @@
           type="text"
           autocomplete="on"
           list="data1"
+          id="first-data-input"
           v-model="firstData"
           @change="changeDisc()"
         />
         <datalist id="data1"> </datalist>
+        <button id="num-change-button-forf" @click="numChangeForF">
+          数値を入力する
+        </button>
         <select name="post-particle" v-model="operator" @change="changeDisc()">
           <option value="+">+</option>
           <option value="-">-</option>
@@ -51,10 +55,14 @@
           type="text"
           autocomplete="on"
           list="data2"
+          id="second-data-input"
           v-model="secondData"
           @change="changeDisc()"
         />
         <datalist id="data2"> </datalist>
+        <button id="num-change-button-fors" @click="numChangeForS">
+          数値を入力する
+        </button>
         <h4>単位</h4>
         <input type="text" v-model="unit" />
       </div>
@@ -89,9 +97,9 @@
           <h2>タイトル</h2>
           <h3 class="data-title" id="data-title">a</h3>
         </div>
-        <div>
+        <div id="data-box">
           <h2>データ</h2>
-          <h3 class="data-num" id="data-num">0</h3>
+          <h4 class="data-num" id="data-num">0</h4>
         </div>
         <div>
           <h2>データの次数</h2>
@@ -288,9 +296,48 @@ export default {
         while (judge.lastChild) {
           judge.lastChild.remove();
         }
+        const dataBox = document.getElementById("data-box");
+        const resultJa = document.createElement("h1");
+        this.intResult = Math.round(this.showingData.latest);
+        this.digit = this.intResult.toString().length;
+        if (this.digit <= 4) {
+          this.roundDigit = this.digit - 3;
+          this.round();
+        } else {
+          this.roundDigit = this.digit - 2;
+          while (this.digitUnitCoeff < this.digit - 4) {
+            // Coeff = "係数"
+            this.digitUnitCoeff = this.digitUnitCoeff + 4;
+          }
+          this.round();
+        }
+        const digitUpButton = document.createElement("button");
+        digitUpButton.textContent = "ざっくり度アップ";
+        const digitDownButton = document.createElement("button");
+        digitDownButton.textContent = "正確度アップ";
+        digitUpButton.onclick = () => {
+          if (this.roundDigit <= this.digit - 2) {
+            this.roundDigit = this.roundDigit + 1;
+            this.round();
+            resultJa.textContent = this.roundedResult + this.showingData.unit;
+          } else {
+            alert("これ以上ざっくり度を上げられません。");
+          }
+        };
+        digitDownButton.onclick = () => {
+          if (this.roundDigit >= 1) {
+            this.roundDigit = this.roundDigit - 1;
+            this.round();
+            resultJa.textContent = this.roundedResult + this.showingData.unit;
+          } else {
+            alert("これ以上正確度を上げられません。");
+          }
+        };
+        resultJa.textContent = this.roundedResult + this.showingData.unit;
         dataTitle.textContent = this.showingData.title;
-        dataNum.textContent = this.showingData.latest + this.showingData.unit;
+        dataNum.textContent = this.showingData.latest;
         dataDegree.textContent = this.showingData.degree;
+        dataBox.append(resultJa, digitUpButton, digitDownButton);
         if (this.showingData.degree > 1) {
           const goodButton = document.createElement("div");
           goodButton.textContent = "正しいと思う";
@@ -423,25 +470,91 @@ export default {
         this.kana = "";
       }
     },
+    numChangeForF() {
+      this.firstData = "";
+      const firstDataInput = document.getElementById("first-data-input");
+      const numChangeButtonForF = document.getElementById(
+        "num-change-button-forf"
+      );
+      if (firstDataInput.type === "text") {
+        const datalist = document.getElementById("data1");
+        while (datalist.lastChild) {
+          datalist.lastChild.remove();
+        }
+        firstDataInput.type = "number";
+        numChangeButtonForF.textContent = "データを選択する";
+      } else {
+        const data1 = document.getElementById("data1");
+        this.data.forEach((e) => {
+          const optionFor1 = document.createElement("option");
+          optionFor1.value = e.title;
+          optionFor1.textContent = e.title;
+          data1.append(optionFor1);
+        });
+        firstDataInput.type = "text";
+        numChangeButtonForF.textContent = "数値を入力する";
+      }
+    },
+    numChangeForS() {
+      this.secondData = "";
+      const secondDataInput = document.getElementById("second-data-input");
+      const numChangeButtonForS = document.getElementById(
+        "num-change-button-fors"
+      );
+      if (secondDataInput.type === "text") {
+        const datalist = document.getElementById("data2");
+        while (datalist.lastChild) {
+          datalist.lastChild.remove();
+        }
+        secondDataInput.type = "number";
+        numChangeButtonForS.textContent = "データを選択する";
+      } else {
+        const data2 = document.getElementById("data2");
+        this.data.forEach((e) => {
+          const optionFor2 = document.createElement("option");
+          optionFor2.value = e.title;
+          optionFor2.textContent = e.title;
+          data2.append(optionFor2);
+        });
+        secondDataInput.type = "text";
+        numChangeButtonForS.textContent = "数値を入力する";
+      }
+    },
     async calc() {
       if (
         this.title == "" ||
         this.kana == "" ||
         this.firstData == "-" ||
+        this.firstData == "" ||
         this.operator == "" ||
         this.secondData == "-" ||
+        this.secondData == "" ||
         this.unit == ""
       ) {
         alert("未入力の部分があります");
       } else {
-        this.index1 = this.data.findIndex((e) => {
-          return e.title == this.firstData;
-        });
-        this.num1 = this.data[this.index1].latest;
-        this.index2 = this.data.findIndex((e) => {
-          return e.title == this.secondData;
-        });
-        this.num2 = this.data[this.index2].latest;
+        const firstDataInput = document.getElementById("first-data-input");
+        const secondDataInput = document.getElementById("second-data-input");
+        if (firstDataInput.type === "text") {
+          this.index1 = this.data.findIndex((e) => {
+            return e.title == this.firstData;
+          });
+          this.num1 = this.data[this.index1].latest;
+        } else if (firstDataInput.type === "number") {
+          this.num1 = this.firstData;
+        } else {
+          alert("type1error");
+        }
+        if (secondDataInput.type === "text") {
+          this.index2 = this.data.findIndex((e) => {
+            return e.title == this.secondData;
+          });
+          this.num2 = this.data[this.index2].latest;
+        } else if (secondDataInput.type === "number") {
+          this.num2 = this.secondData;
+        } else {
+          alert("type2error");
+        }
         switch (this.operator) {
           case "+":
             this.result = this.num1 + this.num2;
@@ -456,7 +569,7 @@ export default {
             this.result = this.num1 / this.num2;
             break;
           default:
-            alert("error");
+            alert("calcerror");
         }
         let checkIndex = this.data.findIndex((e) => {
           return e.latest === this.result;
@@ -536,13 +649,17 @@ export default {
       this.initialize();
     },
     showData() {
-      let index = 0;
-      index = this.data.findIndex((e) => {
-        return e.title == this.searchText;
-      });
-      this.searchText = "";
-      this.showingData = this.data[index];
-      this.goData();
+      if (this.searchText !== "") {
+        let index = 0;
+        index = this.data.findIndex((e) => {
+          return e.title == this.searchText;
+        });
+        this.searchText = "";
+        this.showingData = this.data[index];
+        this.goData();
+      } else {
+        alert("データを選択してください");
+      }
     },
     textDelete() {
       this.searchText = "";
@@ -560,20 +677,13 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-}
-
-*,
-::after,
-::before {
-  margin: 0;
-  padding: 0;
 }
 
 /* アップバー */
