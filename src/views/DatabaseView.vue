@@ -15,6 +15,10 @@
     <input type="text" v-model="data" />
     <h2>単位</h2>
     <input type="text" v-model="unit" />
+    <h2>年</h2>
+    <input type="text" v-model="year" />
+    <h2>参照</h2>
+    <input type="url" v-model="ref" />
     <button @click="postData">登録</button>
   </div>
 </template>
@@ -30,21 +34,27 @@ export default {
     return {
       data: "",
       unit: "",
+      year: "",
+      ref: "",
       name: "",
       furigana: "",
       postData: async () => {
-        const lef = collection(db, "data");
+        const colref = collection(db, "data");
         const postData = {
           degree: 1,
           title: this.name,
           kana: this.furigana,
-          latest: this.data,
+          latest: Number(this.data),
+          year: Number(this.year),
+          ref: this.ref,
           unit: this.unit,
           parent: {},
         };
-        await setDoc(doc(lef, `${this.name}`), postData);
+        await setDoc(doc(colref, `${this.name}`), postData);
         this.data = "";
         this.unit = "";
+        this.year = "";
+        this.ref = "";
         this.name = "";
         this.furigana = "";
       },

@@ -97,14 +97,16 @@
           <h2>タイトル</h2>
           <h3 class="data-title" id="data-title">a</h3>
         </div>
-        <div id="data-box">
+        <div>
           <h2>データ</h2>
           <h4 class="data-num" id="data-num">0</h4>
+          <div id="data-box"></div>
         </div>
         <div>
           <h2>データの次数</h2>
           <h3 class="data-degree" id="data-degree">0</h3>
         </div>
+        <div id="for-primary"></div>
         <div id="judge-area">
           <h2>この推測を評価する</h2>
           <div id="judge"></div>
@@ -289,6 +291,8 @@ export default {
         const dataTitle = document.getElementById("data-title");
         const dataNum = document.getElementById("data-num");
         const dataDegree = document.getElementById("data-degree");
+        const forPrimary = document.getElementById("for-primary");
+        const dataBox = document.getElementById("data-box");
         while (parentDataBox.lastChild) {
           parentDataBox.lastChild.remove();
         }
@@ -296,7 +300,12 @@ export default {
         while (judge.lastChild) {
           judge.lastChild.remove();
         }
-        const dataBox = document.getElementById("data-box");
+        while (forPrimary.lastChild) {
+          forPrimary.lastChild.remove();
+        }
+        while (dataBox.lastChild) {
+          dataBox.lastChild.remove();
+        }
         const resultJa = document.createElement("h1");
         this.intResult = Math.round(this.showingData.latest);
         this.digit = this.intResult.toString().length;
@@ -360,6 +369,31 @@ export default {
             });
           };
           judge.append(goodButton, badButton);
+        }
+        if (this.showingData.degree === 1) {
+          const title = document.createElement("h2");
+          title.textContent = "データの年次：" + this.showingData.year + "年";
+          const refLink = document.createElement("a");
+          refLink.innerText = "出典はこちら";
+          refLink.href = `${this.showingData.ref}`;
+          refLink.target = "_blank";
+          const copyButton = document.createElement("button");
+          copyButton.textContent = "出典先のリンクをコピー";
+          copyButton.onclick = () => {
+            if (!navigator.clipboard) {
+              alert("申し訳ありませんがこのブラウザでは対応していません");
+            } else {
+              navigator.clipboard.writeText(this.showingData.ref).then(
+                () => {
+                  alert("出典先のリンクをコピーしました。");
+                },
+                () => {
+                  alert("コピーに失敗しました。");
+                }
+              );
+            }
+          };
+          forPrimary.append(title, refLink, copyButton);
         }
         if ("parent1" in this.showingData.parent) {
           let parent1Title = this.showingData.parent.parent1.data;
