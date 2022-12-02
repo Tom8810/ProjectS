@@ -1,7 +1,8 @@
 <template>
   <appBarVue />
   <div>
-    <button @click="back">テスト</button>
+    <button @click="back">戻る</button>
+    <button @click="test">テスト</button>
     <div>
       <h4>F9キーか登録ボタンを押すとデータが登録できます。</h4>
       <label for="furigana">ふりがな</label>
@@ -81,6 +82,10 @@ export default {
     },
     handleNameInput() {
       this.furigana = autokana.getFurigana();
+    },
+    test() {
+      let str = "あいうえお";
+      console.log(str.replace("あい", ""));
     },
   },
   mounted() {

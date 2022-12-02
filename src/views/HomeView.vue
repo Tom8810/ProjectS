@@ -144,8 +144,11 @@ export default {
       roundedResult: "",
       isAlreadyStarted: false,
       index1: 0,
+      isNumFor1: false,
       index2: 0,
+      isNumFor2: false,
       data: [],
+      appendData: [],
       title: "",
       kana: "",
       unit: "",
@@ -209,9 +212,19 @@ export default {
         }
       },
       round: function () {
-        this.roundedResult =
-          Math.round(this.intResult / 10 ** this.roundDigit) *
-          10 ** this.roundDigit;
+        if (this.intResult >= 100) {
+          this.roundedResult =
+            Math.round(this.intResult / 10 ** this.roundDigit) *
+            10 ** this.roundDigit;
+        } else {
+          if (this.result.toString().length >= 5) {
+            this.roundedResult =
+              Math.round(this.result / 10 ** this.roundDigit) *
+              10 ** this.roundDigit;
+          } else {
+            this.roundedResult = this.result;
+          }
+        }
         if (this.digit >= 5) {
           if (this.digitUnitCoeff <= this.roundDigit) {
             switch (this.digitUnitCoeff) {
@@ -233,33 +246,192 @@ export default {
           }
         }
       },
-      dataPost: async function () {
+      dataPost: async () => {
         const lef = collection(db, "data");
+        let max1 = this.data[this.index1].degree;
+        let max2 = this.data[this.index2].degree;
+        let parentData1 = this.data[this.index1].title;
+        let parentparent1 = this.data[this.index1].parent;
+        let parentData2 = this.data[this.index2].title;
+        let parentparent2 = this.data[this.index2].parent;
+        if (this.isNumFor1) {
+          max1 = 0;
+          parentData1 = this.num1;
+          parentparent1 = "";
+        }
+        if (this.isNumFor2) {
+          max2 = 0;
+          parentData2 = this.num2;
+          parentparent2 = "";
+        }
         const postData = {
-          degree:
-            Math.max(
-              this.data[this.index1].degree,
-              this.data[this.index2].degree
-            ) + 1,
+          degree: Math.max(max1, max2) + 1,
           title: this.title,
           kana: this.kana,
           latest: this.result,
           unit: this.unit,
           parent: {
             parent1: {
-              data: this.data[this.index1].title,
-              parent: this.data[this.index1].parent,
+              data: parentData1,
+              parent: parentparent1,
             },
             parent2: {
-              data: this.data[this.index2].title,
-              parent: this.data[this.index2].parent,
+              data: parentData2,
+              parent: parentparent2,
             },
             operator: this.operator,
           },
           likedCount: 0,
           date: Date.now(),
         };
-        await setDoc(doc(lef, `${this.title}`), postData);
+        if (
+          this.data.some((e) => {
+            return e.title !== postData.title;
+          })
+        ) {
+          this.appendData.push(postData);
+        }
+        if (!this.isNumFor1) {
+          if (
+            this.data[this.index1].title.includes("一人当たり") &&
+            this.data[this.index1].degree === 1
+          ) {
+            let autoCalc = this.data.filter((e) => {
+              return (
+                e.title.includes("一人当たり") &&
+                e.degree === 1 &&
+                e.title !== this.data[this.index1].title
+              );
+            });
+            autoCalc.forEach((e) => {
+              let autoResult = 0;
+              switch (postData.parent.operator) {
+                case "+":
+                  autoResult = e.latest + this.num2;
+                  break;
+                case "-":
+                  autoResult = e.latest - this.num2;
+                  break;
+                case "×":
+                  autoResult = e.latest * this.num2;
+                  break;
+                case "÷":
+                  autoResult = e.latest / this.num2;
+                  break;
+                default:
+                  alert("calcerror");
+              }
+              let titleFromAuto = e.title.slice(5);
+              let removeTitleStr = postData.parent.parent1.data.slice(5);
+              let newTitle =
+                postData.title.replace(removeTitleStr, "") + titleFromAuto;
+              let kanaFromAuto = e.kana.slice(6);
+              let kanaIndex = this.data.findIndex((e) => {
+                return e.title === postData.parent.parent1.data;
+              });
+              let removeKanaStr = this.data[kanaIndex].kana.slice(6);
+              let newKana =
+                postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
+              const autoData = {
+                degree: 2,
+                title: newTitle,
+                kana: newKana,
+                latest: autoResult,
+                unit: e.unit,
+                parent: {
+                  parent1: {
+                    data: e.title,
+                    parent: "",
+                  },
+                  parent2: {
+                    data: parentData2,
+                    parent: "",
+                  },
+                  operator: postData.parent.operator,
+                },
+                likedCount: 0,
+                date: Date.now(),
+              };
+              console.log(autoData);
+              this.appendData.push(autoData);
+            });
+          }
+        }
+        if (!this.isNumFor2) {
+          if (
+            this.data[this.index2].title.includes("一人当たり") &&
+            this.data[this.index2].degree === 1
+          ) {
+            let autoCalc = this.data.filter((e) => {
+              return (
+                e.title.includes("一人当たり") &&
+                e.degree === 1 &&
+                e.title !== this.data[this.index2].title
+              );
+            });
+            autoCalc.forEach((e) => {
+              let autoResult = 0;
+              switch (postData.parent.operator) {
+                case "+":
+                  autoResult = this.num1 + e.latest;
+                  break;
+                case "-":
+                  autoResult = this.num1 - e.latest;
+                  break;
+                case "×":
+                  autoResult = this.num1 * e.latest;
+                  break;
+                case "÷":
+                  autoResult = this.num1 / e.latest;
+                  break;
+                default:
+                  alert("calcerror");
+              }
+              let titleFromAuto = e.title.slice(5);
+              let removeTitleStr = postData.parent.parent2.data.slice(5);
+              let newTitle =
+                postData.title.replace(removeTitleStr, "") + titleFromAuto;
+              let kanaFromAuto = e.kana.slice(6);
+              let kanaIndex = this.data.findIndex((e) => {
+                return e.title === postData.parent.parent2.data;
+              });
+              let removeKanaStr = this.data[kanaIndex].kana.slice(6);
+              let newKana =
+                postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
+              const autoData = {
+                degree: 2,
+                title: newTitle,
+                kana: newKana,
+                latest: autoResult,
+                unit: e.unit,
+                parent: {
+                  parent1: {
+                    data: parentData1,
+                    parent: "",
+                  },
+                  parent2: {
+                    data: e.title,
+                    parent: "",
+                  },
+                  operator: postData.parent.operator,
+                },
+                likedCount: 0,
+                date: Date.now(),
+              };
+              if (
+                this.data.some((e) => {
+                  return e.title !== newTitle;
+                })
+              ) {
+                this.appendData.push(autoData);
+              }
+            });
+          }
+        }
+        this.appendData.forEach(async (e) => {
+          await setDoc(doc(lef, `${e.title}`), e);
+        });
+        this.appendData = [];
       },
       initialize: function () {
         this.num1 = "";
@@ -269,7 +441,9 @@ export default {
         this.roundedResult = "";
         this.isAlreadyStarted = false;
         this.index1 = 0;
+        this.isNumFor1 = false;
         this.index2 = 0;
+        this.isNumFor2 = false;
         this.title = "";
         this.kana = "";
         this.unit = "";
@@ -307,6 +481,7 @@ export default {
           dataBox.lastChild.remove();
         }
         const resultJa = document.createElement("h1");
+        this.result = this.showingData.latest;
         this.intResult = Math.round(this.showingData.latest);
         this.digit = this.intResult.toString().length;
         if (this.digit <= 4) {
@@ -575,7 +750,8 @@ export default {
           });
           this.num1 = this.data[this.index1].latest;
         } else if (firstDataInput.type === "number") {
-          this.num1 = this.firstData;
+          this.num1 = Number(this.firstData);
+          this.isNumFor1 = true;
         } else {
           alert("type1error");
         }
@@ -585,7 +761,8 @@ export default {
           });
           this.num2 = this.data[this.index2].latest;
         } else if (secondDataInput.type === "number") {
-          this.num2 = this.secondData;
+          this.num2 = Number(this.secondData);
+          this.isNumFor2 = true;
         } else {
           alert("type2error");
         }
