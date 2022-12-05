@@ -28,7 +28,13 @@
 import * as AutoKana from "vanilla-autokana";
 let autokana;
 import appBarVue from "@/components/AppBar.vue";
-import { collection, setDoc, doc } from "@firebase/firestore";
+import {
+  collection,
+  setDoc,
+  doc,
+  updateDoc,
+  arrayUnion,
+} from "@firebase/firestore";
 import { db } from "@/firebase.js";
 export default {
   data() {
@@ -52,6 +58,12 @@ export default {
           parent: {},
         };
         await setDoc(doc(colref, `${this.name}`), postData);
+        if (this.name.includes("一人当たり")) {
+          const ref = doc(db, "data", "overView");
+          await updateDoc(ref, {
+            perPerson: arrayUnion(`${this.name}`),
+          });
+        }
         this.data = "";
         this.unit = "";
         this.year = "";

@@ -124,10 +124,16 @@
 <script>
 import {
   collection,
+  getDoc,
   getDocs,
   setDoc,
   doc,
+  query,
+  orderBy,
+  limit,
+  where,
   updateDoc,
+  arrayUnion,
   increment,
 } from "@firebase/firestore";
 import { db } from "@/firebase.js";
@@ -137,8 +143,11 @@ export default {
   data() {
     return {
       isGuess: true,
+      commonLef: collection(db, "data"),
       num1: "",
       num2: "",
+      calcParent1: "",
+      calcParent2: "",
       operator: "",
       result: "",
       roundedResult: "",
@@ -148,7 +157,11 @@ export default {
       index2: 0,
       isNumFor2: false,
       data: [],
+      alreadyAutoCalc: [],
+      autoCalc: [],
+      perPersonData: [],
       appendData: [],
+      appendIndex: [],
       title: "",
       kana: "",
       unit: "",
@@ -192,9 +205,15 @@ export default {
           const start = document.getElementById("start");
           start.classList.add("hidden");
           this.isAlreadyStarted = true;
-          const snapshot = await getDocs(collection(db, "data"));
-          snapshot.forEach((e) => {
-            this.data.push(e.data());
+          const snapshot = await getDoc(doc(db, "data", "overView"));
+          snapshot.data().index.forEach((e) => {
+            this.data.push(e);
+          });
+          snapshot.data().autoCalc.forEach((e) => {
+            this.alreadyAutoCalc.push(e);
+          });
+          snapshot.data().perPerson.forEach((e) => {
+            this.perPersonData.push(e);
           });
           if (this.isGuess) {
             const data1 = document.getElementById("data1");
@@ -212,6 +231,9 @@ export default {
         }
       },
       round: function () {
+        console.log(this.digitUnitCoeff);
+        console.log(this.digit);
+        console.log(this.roundDigit);
         if (this.intResult >= 100) {
           this.roundedResult =
             Math.round(this.intResult / 10 ** this.roundDigit) *
@@ -247,13 +269,12 @@ export default {
         }
       },
       dataPost: async () => {
-        const lef = collection(db, "data");
-        let max1 = this.data[this.index1].degree;
-        let max2 = this.data[this.index2].degree;
-        let parentData1 = this.data[this.index1].title;
-        let parentparent1 = this.data[this.index1].parent;
-        let parentData2 = this.data[this.index2].title;
-        let parentparent2 = this.data[this.index2].parent;
+        let max1 = this.calcParent1.degree;
+        let max2 = this.calcParent2.degree;
+        let parentData1 = this.calcParent1.title;
+        let parentparent1 = this.calcParent1.parent;
+        let parentData2 = this.calcParent2.title;
+        let parentparent2 = this.calcParent2.parent;
         if (this.isNumFor1) {
           max1 = 0;
           parentData1 = this.num1;
@@ -284,26 +305,45 @@ export default {
           likedCount: 0,
           date: Date.now(),
         };
-        if (
-          this.data.some((e) => {
-            return e.title !== postData.title;
-          })
-        ) {
-          this.appendData.push(postData);
-        }
+        const postIndex = {
+          title: postData.title,
+          latest: postData.latest,
+          kana: postData.kana,
+        };
+        this.appendData.push(postData);
+        this.appendIndex.push(postIndex);
+
         if (!this.isNumFor1) {
           if (
-            this.data[this.index1].title.includes("一人当たり") &&
-            this.data[this.index1].degree === 1
+            this.calcParent1.title.includes("一人当たり") &&
+            this.calcParent1.degree === 1
           ) {
-            let autoCalc = this.data.filter((e) => {
-              return (
-                e.title.includes("一人当たり") &&
-                e.degree === 1 &&
-                e.title !== this.data[this.index1].title
-              );
+            const checkArr = [];
+            this.alreadyAutoCalc.forEach((e) => {
+              if (e.key === this.calcParent1.title && e.ope === this.operator) {
+                checkArr.push(e.dat);
+              }
             });
-            autoCalc.forEach((e) => {
+            const getArr = this.perPersonData.filter((e) => {
+              return e !== this.calcParent1.title && !checkArr.includes(e);
+            });
+            const auto = async () => {
+              let p = Promise.resolve();
+              getArr.forEach(async (e) => {
+                p = p
+                  .then(() => {
+                    const snapshot = getDoc(doc(db, "data", `${e}`));
+                    return snapshot;
+                  })
+                  .then((snapshot) => {
+                    this.autoCalc.push(snapshot.data());
+                  });
+              });
+              await p;
+            };
+            await auto();
+            this.autoCalc.forEach((e) => {
+              console.log(e);
               let autoResult = 0;
               switch (postData.parent.operator) {
                 case "+":
@@ -332,44 +372,67 @@ export default {
               let removeKanaStr = this.data[kanaIndex].kana.slice(6);
               let newKana =
                 postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
-              const autoData = {
-                degree: 2,
-                title: newTitle,
-                kana: newKana,
-                latest: autoResult,
-                unit: e.unit,
-                parent: {
-                  parent1: {
-                    data: e.title,
-                    parent: "",
+              if (
+                this.data.some((e) => {
+                  return e.title !== newTitle;
+                })
+              ) {
+                const autoData = {
+                  degree: 2,
+                  title: newTitle,
+                  kana: newKana,
+                  latest: autoResult,
+                  unit: e.unit,
+                  parent: {
+                    parent1: {
+                      data: parentData2,
+                      parent: "",
+                    },
+                    parent2: {
+                      data: e.title,
+                      parent: "",
+                    },
+                    operator: postData.parent.operator,
                   },
-                  parent2: {
-                    data: parentData2,
-                    parent: "",
-                  },
-                  operator: postData.parent.operator,
-                },
-                likedCount: 0,
-                date: Date.now(),
-              };
-              console.log(autoData);
-              this.appendData.push(autoData);
+                  likedCount: 0,
+                  date: Date.now(),
+                };
+                this.appendData.push(autoData);
+              }
             });
+            this.autoCalc = [];
           }
         }
         if (!this.isNumFor2) {
           if (
-            this.data[this.index2].title.includes("一人当たり") &&
-            this.data[this.index2].degree === 1
+            this.calcParent2.title.includes("一人当たり") &&
+            this.calcParent2.degree === 1
           ) {
-            let autoCalc = this.data.filter((e) => {
-              return (
-                e.title.includes("一人当たり") &&
-                e.degree === 1 &&
-                e.title !== this.data[this.index2].title
-              );
+            const checkArr = [];
+            this.alreadyAutoCalc.forEach((e) => {
+              if (e.key === this.calcParent2.title && e.ope === this.operator) {
+                checkArr.push(e.dat);
+              }
             });
-            autoCalc.forEach((e) => {
+            const getArr = this.perPersonData.filter((e) => {
+              return e !== this.calcParent2.title && !checkArr.includes(e);
+            });
+            const auto = async () => {
+              let p = Promise.resolve();
+              getArr.forEach(async (e) => {
+                p = p
+                  .then(() => {
+                    const snapshot = getDoc(doc(db, "data", `${e}`));
+                    return snapshot;
+                  })
+                  .then((snapshot) => {
+                    this.autoCalc.push(snapshot.data());
+                  });
+              });
+              await p;
+            };
+            await auto();
+            this.autoCalc.forEach((e) => {
               let autoResult = 0;
               switch (postData.parent.operator) {
                 case "+":
@@ -398,38 +461,62 @@ export default {
               let removeKanaStr = this.data[kanaIndex].kana.slice(6);
               let newKana =
                 postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
-              const autoData = {
-                degree: 2,
-                title: newTitle,
-                kana: newKana,
-                latest: autoResult,
-                unit: e.unit,
-                parent: {
-                  parent1: {
-                    data: parentData1,
-                    parent: "",
-                  },
-                  parent2: {
-                    data: e.title,
-                    parent: "",
-                  },
-                  operator: postData.parent.operator,
-                },
-                likedCount: 0,
-                date: Date.now(),
-              };
               if (
                 this.data.some((e) => {
                   return e.title !== newTitle;
                 })
               ) {
+                const autoData = {
+                  degree: 2,
+                  title: newTitle,
+                  kana: newKana,
+                  latest: autoResult,
+                  unit: e.unit,
+                  parent: {
+                    parent1: {
+                      data: parentData1,
+                      parent: "",
+                    },
+                    parent2: {
+                      data: e.title,
+                      parent: "",
+                    },
+                    operator: postData.parent.operator,
+                  },
+                  likedCount: 0,
+                  date: Date.now(),
+                };
                 this.appendData.push(autoData);
               }
             });
+            this.autoCalc = [];
           }
         }
         this.appendData.forEach(async (e) => {
-          await setDoc(doc(lef, `${e.title}`), e);
+          await setDoc(doc(this.commonLef, `${e.title}`), e);
+          let ref = doc(db, "data", "overView");
+          let keyData;
+          let otherData;
+          if (e.parent.parent1.data.includes("一人当たり")) {
+            keyData = e.parent.parent1.data;
+            otherData = e.parent.parent2.data;
+          } else {
+            keyData = e.parent.parent2.data;
+            otherData = e.parent.parent1.data;
+          }
+          await updateDoc(ref, {
+            autoCalc: arrayUnion({
+              dat: `${otherData}`,
+              ope: `${e.parent.operator}`,
+              key: `${keyData}`,
+            }),
+          });
+          await updateDoc(ref, {
+            index: arrayUnion({
+              title: e.title,
+              kana: e.kana,
+            }),
+          });
         });
         this.appendData = [];
       },
@@ -484,6 +571,7 @@ export default {
         this.result = this.showingData.latest;
         this.intResult = Math.round(this.showingData.latest);
         this.digit = this.intResult.toString().length;
+        this.digitUnitCoeff = 0;
         if (this.digit <= 4) {
           this.roundDigit = this.digit - 3;
           this.round();
@@ -580,18 +668,14 @@ export default {
           parentData1.textContent = parent1Title;
           parentOperator.textContent = parentOpe;
           parentData2.textContent = parent2Title;
-          parentData1.onclick = () => {
-            let i = this.data.findIndex((ele) => {
-              return ele.title === parent1Title;
-            });
-            this.showingData = this.data[i];
+          parentData1.onclick = async () => {
+            const snapshot = await getDoc(doc(db, "data", `${parent1Title}`));
+            this.showingData = snapshot.data();
             this.goData();
           };
-          parentData2.onclick = () => {
-            let i = this.data.findIndex((ele) => {
-              return ele.title === parent2Title;
-            });
-            this.showingData = this.data[i];
+          parentData2.onclick = async () => {
+            const snapshot = await getDoc(doc(db, "data", `${parent2Title}`));
+            this.showingData = snapshot.data();
             this.goData();
           };
           parentDataBox.append(parentData1, parentOperator, parentData2);
@@ -612,48 +696,48 @@ export default {
           });
         }
       }.bind(this),
-      showGuess: function () {
+      showGuess: async () => {
         // favorite
         const favoritePost = document.getElementById("favorite-post");
         const favData = document.createElement("div");
-        let maxFav = 0;
-        this.data.forEach((e) => {
-          if (e.likedCount > maxFav) {
-            maxFav = e.likedCount;
-          }
+        const favQ = query(
+          this.commonLef,
+          orderBy("likedCount", "desc"),
+          limit(1)
+        );
+        const fav = await getDocs(favQ);
+        fav.forEach(async (e) => {
+          favData.textContent = e.data().title;
+          favData.onclick = async () => {
+            this.isGuess = false;
+            const showingFavorite = await getDoc(
+              doc(db, "data", `${e.data().title}`)
+            );
+            this.showingData = showingFavorite.data();
+            await this.start();
+            await this.goData();
+          };
+          favoritePost.append(favData);
         });
-        let indexFav = this.data.findIndex((e) => {
-          return e.likedCount === maxFav;
-        });
-        favData.textContent = this.data[indexFav].title;
-        favData.onclick = async () => {
-          this.isGuess = false;
-          this.showingData = this.data[indexFav];
-          await this.start();
-          await this.goData();
-        };
-        favoritePost.append(favData);
 
         // new
         const newPost = document.getElementById("new-post");
         const newData = document.createElement("div");
-        let maxNew = 0;
-        this.data.forEach((e) => {
-          if (e.date > maxNew) {
-            maxNew = e.date;
-          }
+        const newQ = query(this.commonLef, orderBy("date", "desc"), limit(1));
+        const ne = await getDocs(newQ);
+        ne.forEach(async (e) => {
+          newData.textContent = e.data().title;
+          newData.onclick = async () => {
+            this.isGuess = false;
+            const showingNew = await getDoc(
+              doc(db, "data", `${e.data().title}`)
+            );
+            this.showingData = showingNew.data();
+            await this.start();
+            await this.goData();
+          };
+          newPost.append(newData);
         });
-        let indexNew = this.data.findIndex((e) => {
-          return e.date === maxNew;
-        });
-        newData.textContent = this.data[indexNew].title;
-        newData.onclick = async () => {
-          this.isGuess = false;
-          this.showingData = this.data[indexNew];
-          await this.start();
-          await this.goData();
-        };
-        newPost.append(newData);
       },
       goDB: async function () {
         this.isGuess = false;
@@ -745,10 +829,9 @@ export default {
         const firstDataInput = document.getElementById("first-data-input");
         const secondDataInput = document.getElementById("second-data-input");
         if (firstDataInput.type === "text") {
-          this.index1 = this.data.findIndex((e) => {
-            return e.title == this.firstData;
-          });
-          this.num1 = this.data[this.index1].latest;
+          const d1 = await getDoc(doc(db, "data", `${this.firstData}`));
+          this.calcParent1 = d1.data();
+          this.num1 = this.calcParent1.latest;
         } else if (firstDataInput.type === "number") {
           this.num1 = Number(this.firstData);
           this.isNumFor1 = true;
@@ -756,10 +839,9 @@ export default {
           alert("type1error");
         }
         if (secondDataInput.type === "text") {
-          this.index2 = this.data.findIndex((e) => {
-            return e.title == this.secondData;
-          });
-          this.num2 = this.data[this.index2].latest;
+          const d2 = await getDoc(doc(db, "data", `${this.secondData}`));
+          this.calcParent2 = d2.data();
+          this.num2 = this.calcParent2.latest;
         } else if (secondDataInput.type === "number") {
           this.num2 = Number(this.secondData);
           this.isNumFor2 = true;
@@ -782,32 +864,28 @@ export default {
           default:
             alert("calcerror");
         }
-        let checkIndex = this.data.findIndex((e) => {
-          return e.latest === this.result;
-        });
-        if (
-          checkIndex !== -1 &&
-          this.operator === this.data[checkIndex].parent.operator
-        ) {
-          let checkArr1 = [this.firstData, this.secondData];
-          let checkArr2 = [
-            this.data[checkIndex].parent.parent1.data,
-            this.data[checkIndex].parent.parent2.data,
-          ];
-          checkArr1 = checkArr1.filter((e) => {
-            return !checkArr2.some((ele) => {
-              return ele === e;
-            });
-          });
-          console.log(checkArr1);
-          if (checkArr1.length === 0) {
-            this.showingData = this.data[checkIndex];
+        let isChecked = false;
+        const checkQ = query(
+          this.commonLef,
+          where("latest", "==", this.result)
+        );
+        const checkD = await getDocs(checkQ);
+        checkD.forEach(async (e) => {
+          if (
+            (e.data().parent.parent1.data === this.firstData &&
+              e.data().parent.parent2.data === this.secondData) ||
+            (e.data().parent.parent2.data === this.firstData &&
+              e.data().parent.parent1.data === this.secondData)
+          ) {
+            this.showingData = e.data();
             this.isGuess = false;
+            isChecked = true;
             await this.start();
             this.goData();
             alert("既にデータがあります。");
           }
-        } else {
+        });
+        if (!isChecked) {
           this.intResult = Math.round(this.result);
           this.digit = this.intResult.toString().length;
           if (this.digit <= 4) {
@@ -848,6 +926,7 @@ export default {
           resultJa.textContent = this.roundedResult + this.unit;
           resultNum.textContent = this.result;
           resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
+          console.log("ok");
           this.dataPost();
         }
       }
@@ -859,14 +938,11 @@ export default {
       }
       this.initialize();
     },
-    showData() {
+    async showData() {
       if (this.searchText !== "") {
-        let index = 0;
-        index = this.data.findIndex((e) => {
-          return e.title == this.searchText;
-        });
+        const snapshot = await getDoc(doc(db, "data", `${this.searchText}`));
+        this.showingData = snapshot.data();
         this.searchText = "";
-        this.showingData = this.data[index];
         this.goData();
       } else {
         alert("データを選択してください");
@@ -876,11 +952,11 @@ export default {
       this.searchText = "";
     },
     test_auto() {
-      this.title = "秋田県の醬油消費量";
+      this.title = "秋田県のしょう油消費量";
       this.kana = "あきたけんのしょうゆしょうひりょう";
-      this.firstData = "秋田県の人口データ";
+      this.firstData = "一人当たりしょう油消費量";
       this.operator = "×";
-      this.secondData = "一人当たり醬油消費量";
+      this.secondData = "秋田県の人口データ";
       this.unit = "リットル";
     },
   },
