@@ -160,8 +160,8 @@ export default {
       alreadyAutoCalc: [],
       autoCalc: [],
       perPersonData: [],
+      prefData: [],
       appendData: [],
-      appendIndex: [],
       title: "",
       kana: "",
       unit: "",
@@ -173,10 +173,105 @@ export default {
       roundDigit: 0,
       digitUnitCoeff: 0,
       searchText: "",
-      goodGuess: [],
-      badGuess: [],
       showingData: "",
-      databaseBox: [],
+      prefectures: [
+        "北海道",
+        "青森",
+        "岩手",
+        "宮城",
+        "秋田",
+        "山形",
+        "福島",
+        "茨城",
+        "栃木",
+        "群馬",
+        "埼玉",
+        "千葉",
+        "東京",
+        "神奈川",
+        "新潟",
+        "富山",
+        "石川",
+        "福井",
+        "山梨",
+        "長野",
+        "岐阜",
+        "静岡",
+        "愛知",
+        "三重",
+        "滋賀",
+        "京都",
+        "大阪",
+        "兵庫",
+        "奈良",
+        "和歌山",
+        "鳥取",
+        "島根",
+        "岡山",
+        "広島",
+        "山口",
+        "徳島",
+        "香川",
+        "愛媛",
+        "高知",
+        "福岡",
+        "佐賀",
+        "長崎",
+        "熊本",
+        "大分",
+        "宮崎",
+        "鹿児島",
+        "沖縄",
+      ],
+      prefecturesKana: [
+        "ほっかいどう",
+        "あおもり",
+        "いわて",
+        "みやぎ",
+        "あきた",
+        "やまがた",
+        "ふくしま",
+        "いばらき",
+        "とちぎ",
+        "ぐんま",
+        "さいたま",
+        "ちば",
+        "とうきょう",
+        "かながわ",
+        "にいがた",
+        "とやま",
+        "いしかわ",
+        "ふくい",
+        "やまなし",
+        "ながの",
+        "ぎふ",
+        "しずおか",
+        "あいち",
+        "みえ",
+        "しが",
+        "きょうと",
+        "おおさか",
+        "ひょうご",
+        "なら",
+        "わかやま",
+        "とっとり",
+        "しまね",
+        "おかやま",
+        "ひろしま",
+        "やまぐち",
+        "とくしま",
+        "かがわ",
+        "えひめ",
+        "こうち",
+        "ふくおか",
+        "さが",
+        "ながさき",
+        "くまもと",
+        "おおいた",
+        "みやざき",
+        "かごしま",
+        "おきなわ",
+      ],
       alreadyGoSearch: false,
       changeDisc: function () {
         switch (this.operator) {
@@ -215,6 +310,9 @@ export default {
           snapshot.data().perPerson.forEach((e) => {
             this.perPersonData.push(e);
           });
+          snapshot.data().pref.forEach((e) => {
+            this.prefData.push(e);
+          });
           if (this.isGuess) {
             const data1 = document.getElementById("data1");
             const data2 = document.getElementById("data2");
@@ -231,9 +329,6 @@ export default {
         }
       },
       round: function () {
-        console.log(this.digitUnitCoeff);
-        console.log(this.digit);
-        console.log(this.roundDigit);
         if (this.intResult >= 100) {
           this.roundedResult =
             Math.round(this.intResult / 10 ** this.roundDigit) *
@@ -305,14 +400,23 @@ export default {
           likedCount: 0,
           date: Date.now(),
         };
-        const postIndex = {
-          title: postData.title,
-          latest: postData.latest,
-          kana: postData.kana,
-        };
         this.appendData.push(postData);
-        this.appendIndex.push(postIndex);
 
+        let prefBool = (e) => {
+          return this.prefectures.some((ele) => {
+            return e.includes(ele);
+          });
+        };
+        let prefIndex = (e) => {
+          return this.prefectures.findIndex((ele) => {
+            return e.includes(ele);
+          });
+        };
+        let prefIndexKana = (e) => {
+          return this.prefecturesKana.findIndex((ele) => {
+            return e.includes(ele);
+          });
+        };
         if (!this.isNumFor1) {
           if (
             this.calcParent1.title.includes("一人当たり") &&
@@ -320,8 +424,8 @@ export default {
           ) {
             const checkArr = [];
             this.alreadyAutoCalc.forEach((e) => {
-              if (e.key === this.calcParent1.title && e.ope === this.operator) {
-                checkArr.push(e.dat);
+              if (e.dat === this.calcParent2.title && e.ope === this.operator) {
+                checkArr.push(e.key);
               }
             });
             const getArr = this.perPersonData.filter((e) => {
@@ -343,7 +447,6 @@ export default {
             };
             await auto();
             this.autoCalc.forEach((e) => {
-              console.log(e);
               let autoResult = 0;
               switch (postData.parent.operator) {
                 case "+":
@@ -401,6 +504,158 @@ export default {
               }
             });
             this.autoCalc = [];
+          } else if (
+            prefBool(this.calcParent1.title) &&
+            prefBool(this.title) &&
+            this.calcParent1.degree === 1
+          ) {
+            const checkArr = [];
+            this.alreadyAutoCalc.forEach((e) => {
+              if (e.dat === this.calcParent2.title && e.ope === this.operator) {
+                checkArr.push(e.key);
+              }
+            });
+            let checkChar = this.calcParent1.title.slice(
+              this.calcParent1.title.indexOf("の") + 1
+            );
+            const getArr = this.prefData.filter((e) => {
+              return (
+                e !== this.calcParent1.title &&
+                !checkArr.includes(e) &&
+                e.includes(checkChar)
+              );
+            });
+            const auto = async () => {
+              let p = Promise.resolve();
+              getArr.forEach(async (e) => {
+                p = p
+                  .then(() => {
+                    const snapshot = getDoc(doc(db, "data", `${e}`));
+                    return snapshot;
+                  })
+                  .then((snapshot) => {
+                    this.autoCalc.push(snapshot.data());
+                  });
+              });
+              await p;
+            };
+            await auto();
+            this.autoCalc.forEach((e) => {
+              let autoResult = 0;
+              // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
+              let autoPref = this.prefectures[prefIndex(e.title)];
+              let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
+              let postPref = this.prefectures[prefIndex(postData.title)];
+              let postPrefKana =
+                this.prefecturesKana[prefIndexKana(postData.kana)];
+              switch (postData.parent.operator) {
+                case "+":
+                  autoResult = e.latest + this.num2;
+                  break;
+                case "-":
+                  autoResult = e.latest - this.num2;
+                  break;
+                case "×":
+                  autoResult = e.latest * this.num2;
+                  break;
+                case "÷":
+                  autoResult = e.latest / this.num2;
+                  break;
+                default:
+                  alert("calcerror");
+              }
+              let newTitle;
+              let newKana;
+              if (postData.title.includes("県")) {
+                if (autoPref === "東京") {
+                  newTitle = postData.title
+                    .replace(postPref + "県", autoPref + "都")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "けん", autoPrefKana + "都")
+                    .replace(postPrefKana, autoPrefKana);
+                } else if (autoPref === "大阪" || autoPref === "京都") {
+                  newTitle = postData.title
+                    .replace(postPref + "県", autoPref + "府")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "けん", autoPrefKana + "ふ")
+                    .replace(postPrefKana, autoPrefKana);
+                } else {
+                  newTitle = postData.title.replace(postPref, autoPref);
+                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                }
+              } else if (postData.title.includes("府")) {
+                if (autoPref === "東京") {
+                  newTitle = postData.title
+                    .replace(postPref + "府", autoPref + "都")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "ふ", autoPrefKana + "と")
+                    .replace(postPrefKana, autoPrefKana);
+                } else if (autoPref === "大阪" || autoPref === "京都") {
+                  newTitle = postData.title.replace(postPref, autoPref);
+                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                } else {
+                  newTitle = postData.title
+                    .replace(postPref + "府", autoPref + "県")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "ふ", autoPrefKana + "けん")
+                    .replace(postPrefKana, autoPrefKana);
+                }
+              } else if (postData.title.includes("都")) {
+                if (autoPref === "東京") {
+                  newTitle = postData.title.replace(postPref, autoPref);
+                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                } else if (autoPref === "大阪" || autoPref === "京都") {
+                  newTitle = postData.title
+                    .replace(postPref + "都", autoPref + "府")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "と", autoPrefKana + "ふ")
+                    .replace(postPrefKana, autoPrefKana);
+                } else {
+                  newTitle = postData.title
+                    .replace(postPref + "都", autoPref + "けん")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "と", autoPrefKana + "けん")
+                    .replace(postPrefKana, autoPrefKana);
+                }
+              } else {
+                newTitle = postData.title.replace(postPref, autoPref);
+                newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+              }
+              if (
+                this.data.some((ele) => {
+                  return ele.title !== newTitle;
+                })
+              ) {
+                const autoData = {
+                  degree: 2,
+                  title: newTitle,
+                  kana: newKana,
+                  latest: autoResult,
+                  unit: postData.unit,
+                  parent: {
+                    parent1: {
+                      data: parentData2,
+                      parent: "",
+                    },
+                    parent2: {
+                      data: e.title,
+                      parent: "",
+                    },
+                    operator: postData.parent.operator,
+                  },
+                  likedCount: 0,
+                  date: Date.now(),
+                };
+                this.appendData.push(autoData);
+              }
+            });
+            this.autoCalc = [];
           }
         }
         if (!this.isNumFor2) {
@@ -410,8 +665,8 @@ export default {
           ) {
             const checkArr = [];
             this.alreadyAutoCalc.forEach((e) => {
-              if (e.key === this.calcParent2.title && e.ope === this.operator) {
-                checkArr.push(e.dat);
+              if (e.dat === this.calcParent1.title && e.ope === this.operator) {
+                checkArr.push(e.key);
               }
             });
             const getArr = this.perPersonData.filter((e) => {
@@ -490,27 +745,197 @@ export default {
               }
             });
             this.autoCalc = [];
+          } else if (
+            prefBool(this.calcParent2.title) &&
+            prefBool(this.title) &&
+            this.calcParent2.degree === 1
+          ) {
+            const checkArr = [];
+            this.alreadyAutoCalc.forEach((e) => {
+              if (e.dat === this.calcParent1.title && e.ope === this.operator) {
+                checkArr.push(e.key);
+              }
+            });
+            let checkChar = this.calcParent1.title.slice(
+              this.calcParent2.title.indexOf("の") + 1
+            );
+            const getArr = this.prefData.filter((e) => {
+              return (
+                e !== this.calcParent2.title &&
+                !checkArr.includes(e) &&
+                e.includes(checkChar)
+              );
+            });
+            const auto = async () => {
+              let p = Promise.resolve();
+              getArr.forEach(async (e) => {
+                p = p
+                  .then(() => {
+                    const snapshot = getDoc(doc(db, "data", `${e}`));
+                    return snapshot;
+                  })
+                  .then((snapshot) => {
+                    this.autoCalc.push(snapshot.data());
+                  });
+              });
+              await p;
+            };
+            await auto();
+            this.autoCalc.forEach((e) => {
+              let autoResult = 0;
+              // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
+              let autoPref = this.prefectures[prefIndex(e.title)];
+              let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
+              let postPref = this.prefectures[prefIndex(postData.title)];
+              let postPrefKana =
+                this.prefecturesKana[prefIndexKana(postData.kana)];
+              switch (postData.parent.operator) {
+                case "+":
+                  autoResult = this.num1 + e.latest;
+                  break;
+                case "-":
+                  autoResult = this.num1 - e.latest;
+                  break;
+                case "×":
+                  autoResult = this.num1 * e.latest;
+                  break;
+                case "÷":
+                  autoResult = this.num1 / e.latest;
+                  break;
+                default:
+                  alert("calcerror");
+              }
+              let newTitle;
+              let newKana;
+              if (postData.title.includes("県")) {
+                if (autoPref === "東京") {
+                  newTitle = postData.title
+                    .replace(postPref + "県", autoPref + "都")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "けん", autoPrefKana + "都")
+                    .replace(postPrefKana, autoPrefKana);
+                } else if (autoPref === "大阪" || autoPref === "京都") {
+                  newTitle = postData.title
+                    .replace(postPref + "県", autoPref + "府")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "けん", autoPrefKana + "ふ")
+                    .replace(postPrefKana, autoPrefKana);
+                } else {
+                  newTitle = postData.title.replace(postPref, autoPref);
+                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                }
+              } else if (postData.title.includes("府")) {
+                if (autoPref === "東京") {
+                  newTitle = postData.title
+                    .replace(postPref + "府", autoPref + "都")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "ふ", autoPrefKana + "と")
+                    .replace(postPrefKana, autoPrefKana);
+                } else if (autoPref === "大阪" || autoPref === "京都") {
+                  newTitle = postData.title.replace(postPref, autoPref);
+                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                } else {
+                  newTitle = postData.title
+                    .replace(postPref + "府", autoPref + "県")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "ふ", autoPrefKana + "けん")
+                    .replace(postPrefKana, autoPrefKana);
+                }
+              } else if (postData.title.includes("都")) {
+                if (autoPref === "東京") {
+                  newTitle = postData.title.replace(postPref, autoPref);
+                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                } else if (autoPref === "大阪" || autoPref === "京都") {
+                  newTitle = postData.title
+                    .replace(postPref + "都", autoPref + "府")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "と", autoPrefKana + "ふ")
+                    .replace(postPrefKana, autoPrefKana);
+                } else {
+                  newTitle = postData.title
+                    .replace(postPref + "都", autoPref + "けん")
+                    .replace(postPref, autoPref);
+                  newKana = postData.kana
+                    .replace(postPrefKana + "と", autoPrefKana + "けん")
+                    .replace(postPrefKana, autoPrefKana);
+                }
+              } else {
+                newTitle = postData.title.replace(postPref, autoPref);
+                newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+              }
+              if (
+                this.data.some((ele) => {
+                  return ele.title !== newTitle;
+                })
+              ) {
+                const autoData = {
+                  degree: 2,
+                  title: newTitle,
+                  kana: newKana,
+                  latest: autoResult,
+                  unit: postData.unit,
+                  parent: {
+                    parent1: {
+                      data: parentData1,
+                      parent: "",
+                    },
+                    parent2: {
+                      data: e.title,
+                      parent: "",
+                    },
+                    operator: postData.parent.operator,
+                  },
+                  likedCount: 0,
+                  date: Date.now(),
+                };
+                this.appendData.push(autoData);
+              }
+            });
+            this.autoCalc = [];
           }
         }
+        const ref = doc(db, "data", "overView");
         this.appendData.forEach(async (e) => {
           await setDoc(doc(this.commonLef, `${e.title}`), e);
-          let ref = doc(db, "data", "overView");
-          let keyData;
-          let otherData;
           if (e.parent.parent1.data.includes("一人当たり")) {
-            keyData = e.parent.parent1.data;
-            otherData = e.parent.parent2.data;
-          } else {
-            keyData = e.parent.parent2.data;
-            otherData = e.parent.parent1.data;
+            await updateDoc(ref, {
+              autoCalc: arrayUnion({
+                dat: `${e.parent.parent2.data}`,
+                ope: `${e.parent.operator}`,
+                key: `${e.parent.parent1.data}`,
+              }),
+            });
+          } else if (e.parent.parent2.data.includes("一人当たり")) {
+            await updateDoc(ref, {
+              autoCalc: arrayUnion({
+                dat: `${e.parent.parent1.data}`,
+                ope: `${e.parent.operator}`,
+                key: `${e.parent.parent2.data}`,
+              }),
+            });
           }
-          await updateDoc(ref, {
-            autoCalc: arrayUnion({
-              dat: `${otherData}`,
-              ope: `${e.parent.operator}`,
-              key: `${keyData}`,
-            }),
-          });
+          if (prefBool(e.parent.parent1.data)) {
+            await updateDoc(ref, {
+              autoCalc: arrayUnion({
+                dat: `${e.parent.parent2.data}`,
+                ope: `${e.parent.operator}`,
+                key: `${e.parent.parent1.data}`,
+              }),
+            });
+          } else {
+            await updateDoc(ref, {
+              autoCalc: arrayUnion({
+                dat: `${e.parent.parent1.data}`,
+                ope: `${e.parent.operator}`,
+                key: `${e.parent.parent2.data}`,
+              }),
+            });
+          }
           await updateDoc(ref, {
             index: arrayUnion({
               title: e.title,
@@ -523,10 +948,11 @@ export default {
       initialize: function () {
         this.num1 = "";
         this.num2 = "";
+        this.calcParent1 = "";
+        this.calcParent2 = "";
         this.operator = "";
         this.result = "";
         this.roundedResult = "";
-        this.isAlreadyStarted = false;
         this.index1 = 0;
         this.isNumFor1 = false;
         this.index2 = 0;
@@ -541,6 +967,7 @@ export default {
         this.digit = 0;
         this.roundDigit = 0;
         this.digitUnitCoeff = 0;
+        this.searchText = "";
       },
       goData: function () {
         const search = document.getElementById("search");
@@ -616,7 +1043,6 @@ export default {
           const badButton = document.createElement("div");
           badButton.textContent = "正しくないと思う";
           goodButton.onclick = async () => {
-            this.goodGuess.push(this.showingData);
             judge.style.display = "none";
             const ref = doc(db, "data", `${this.showingData.title}`);
             await updateDoc(ref, {
@@ -624,7 +1050,6 @@ export default {
             });
           };
           badButton.onclick = async () => {
-            this.badGuess.push(this.showingData);
             judge.style.display = "none";
             const ref = doc(db, "data", `${this.showingData.title}`);
             await updateDoc(ref, {
@@ -926,7 +1351,6 @@ export default {
           resultJa.textContent = this.roundedResult + this.unit;
           resultNum.textContent = this.result;
           resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
-          console.log("ok");
           this.dataPost();
         }
       }
@@ -952,12 +1376,12 @@ export default {
       this.searchText = "";
     },
     test_auto() {
-      this.title = "秋田県のしょう油消費量";
-      this.kana = "あきたけんのしょうゆしょうひりょう";
-      this.firstData = "一人当たりしょう油消費量";
+      this.title = "秋田県の二酸化炭素排出量";
+      this.kana = "あきたけんのにさんかたんそはいしゅつりょう";
+      this.firstData = "秋田県の人口データ";
       this.operator = "×";
-      this.secondData = "秋田県の人口データ";
-      this.unit = "リットル";
+      this.secondData = "一人当たり二酸化炭素排出量";
+      this.unit = "キログラム";
     },
   },
   components: { appBarVue },
