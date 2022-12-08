@@ -24,45 +24,85 @@
         <h3>推測テーマ</h3>
         <input
           type="text"
-          name="title"
+          name="name"
+          id="name"
           v-model="title"
           @change="changeDisc()"
+          @input="handleNameInput"
         />
         <h3>テーマのよみがな(平仮名)</h3>
-        <input type="text" v-model="kana" @keyup="isKana" />
+        <input name="furigana" id="furigana" v-model="kana" />
       </div>
       <div class="calc-area">
-        <h3>使用データ</h3>
-        <input
-          type="text"
-          autocomplete="on"
-          list="data1"
-          id="first-data-input"
-          v-model="firstData"
-          @change="changeDisc()"
-        />
-        <datalist id="data1"> </datalist>
-        <button id="num-change-button-forf" @click="numChangeForF">
-          数値を入力する
-        </button>
-        <select name="post-particle" v-model="operator" @change="changeDisc()">
-          <option value="+">+</option>
-          <option value="-">-</option>
-          <option value="×">×</option>
-          <option value="÷">÷</option>
-        </select>
-        <input
-          type="text"
-          autocomplete="on"
-          list="data2"
-          id="second-data-input"
-          v-model="secondData"
-          @change="changeDisc()"
-        />
-        <datalist id="data2"> </datalist>
-        <button id="num-change-button-fors" @click="numChangeForS">
-          数値を入力する
-        </button>
+        <div id="calc-data-area">
+          <h3>使用データ</h3>
+          <button id="data-number-button" @click="addData">
+            データの数を増やす
+          </button>
+          <div>
+            <input
+              type="text"
+              autocomplete="on"
+              list="data1"
+              id="data-input-1"
+              v-model="firstData"
+              @change="changeDisc()"
+            />
+            <datalist id="data1"> </datalist>
+            <button id="num-change-button-forf" @click="numChangeForF">
+              数値を入力する
+            </button>
+          </div>
+          <div>
+            <select
+              name="post-particle"
+              v-model="operator"
+              @change="changeDisc()"
+            >
+              <option value="+">+</option>
+              <option value="-">-</option>
+              <option value="×">×</option>
+              <option value="÷">÷</option>
+            </select>
+            <input
+              type="text"
+              autocomplete="on"
+              list="data2"
+              id="data-input-2"
+              v-model="secondData"
+              @change="changeDisc()"
+            />
+            <datalist id="data2"> </datalist>
+            <button id="num-change-button-fors" @click="numChangeForS">
+              数値を入力する
+            </button>
+          </div>
+          <div v-if="howManyData === 3">
+            <select
+              name="post-particle"
+              v-model="operator2"
+              @change="changeDisc()"
+            >
+              <option value="+">+</option>
+              <option value="-">-</option>
+              <option value="×">×</option>
+              <option value="÷">÷</option>
+            </select>
+            <input
+              type="text"
+              autocomplete="on"
+              list="data3"
+              id="data-input-3"
+              v-model="thirdData"
+              @change="changeDisc()"
+              @mouseover.once="thirdStart"
+            />
+            <datalist id="data3"> </datalist>
+            <button id="num-change-button-fort" @click="numChangeForT">
+              数値を入力する
+            </button>
+          </div>
+        </div>
         <h4>単位</h4>
         <input type="text" v-model="unit" />
       </div>
@@ -122,6 +162,8 @@
 </template>
 
 <script>
+import * as AutoKana from "vanilla-autokana";
+let autokana;
 import {
   collection,
   getDoc,
@@ -146,16 +188,19 @@ export default {
       commonLef: collection(db, "data"),
       num1: "",
       num2: "",
+      num3: "",
       calcParent1: "",
       calcParent2: "",
+      calcParent3: "",
+      howManyData: 2,
       operator: "",
+      operator2: "",
       result: "",
       roundedResult: "",
       isAlreadyStarted: false,
-      index1: 0,
       isNumFor1: false,
-      index2: 0,
       isNumFor2: false,
+      isNumFor3: false,
       data: [],
       alreadyAutoCalc: [],
       autoCalc: [],
@@ -167,6 +212,7 @@ export default {
       unit: "",
       firstData: "",
       secondData: "",
+      thirdData: "",
       discription: "",
       intResult: 0,
       digit: 0,
@@ -364,604 +410,684 @@ export default {
         }
       },
       dataPost: async () => {
-        let max1 = this.calcParent1.degree;
-        let max2 = this.calcParent2.degree;
-        let parentData1 = this.calcParent1.title;
-        let parentparent1 = this.calcParent1.parent;
-        let parentData2 = this.calcParent2.title;
-        let parentparent2 = this.calcParent2.parent;
-        if (this.isNumFor1) {
-          max1 = 0;
-          parentData1 = this.num1;
-          parentparent1 = "";
-        }
-        if (this.isNumFor2) {
-          max2 = 0;
-          parentData2 = this.num2;
-          parentparent2 = "";
-        }
-        const postData = {
-          degree: Math.max(max1, max2) + 1,
-          title: this.title,
-          kana: this.kana,
-          latest: this.result,
-          unit: this.unit,
-          parent: {
-            parent1: {
-              data: parentData1,
-              parent: parentparent1,
+        if (this.howManyData === 3) {
+          let max1 = this.calcParent1.degree;
+          let max2 = this.calcParent2.degree;
+          let max3 = this.calcParent2.degree;
+          let parentData1 = this.calcParent1.title;
+          let parentparent1 = this.calcParent1.parent;
+          let parentData2 = this.calcParent2.title;
+          let parentparent2 = this.calcParent2.parent;
+          let parentData3 = this.calcParent3.title;
+          let parentparent3 = this.calcParent3.parent;
+          if (this.isNumFor1) {
+            max1 = 0;
+            parentData1 = this.num1;
+            parentparent1 = "";
+          }
+          if (this.isNumFor2) {
+            max2 = 0;
+            parentData2 = this.num2;
+            parentparent2 = "";
+          }
+          if (this.isNumFor3) {
+            max3 = 0;
+            parentData3 = this.num3;
+            parentparent3 = "";
+          }
+          const postData = {
+            degree: Math.max(max1, max2, max3) + 1,
+            title: this.title,
+            kana: this.kana,
+            latest: this.result,
+            unit: this.unit,
+            parent: {
+              parent1: {
+                data: parentData1,
+                parent: parentparent1,
+              },
+              parent2: {
+                data: parentData2,
+                parent: parentparent2,
+              },
+              parent3: {
+                data: parentData3,
+                parent: parentparent3,
+              },
+              operator: this.operator,
+              operator2: this.operator2,
             },
-            parent2: {
-              data: parentData2,
-              parent: parentparent2,
+            likedCount: 0,
+            date: Date.now(),
+          };
+          this.appendData.push(postData);
+          const ref = doc(db, "data", "overView");
+          this.appendData.forEach(async (e) => {
+            await setDoc(doc(this.commonLef, `${e.title}`), e);
+            await updateDoc(ref, {
+              index: arrayUnion({
+                title: e.title,
+                kana: e.kana,
+              }),
+            });
+          });
+        } else {
+          let max1 = this.calcParent1.degree;
+          let max2 = this.calcParent2.degree;
+          let parentData1 = this.calcParent1.title;
+          let parentparent1 = this.calcParent1.parent;
+          let parentData2 = this.calcParent2.title;
+          let parentparent2 = this.calcParent2.parent;
+          if (this.isNumFor1) {
+            max1 = 0;
+            parentData1 = this.num1;
+            parentparent1 = "";
+          }
+          if (this.isNumFor2) {
+            max2 = 0;
+            parentData2 = this.num2;
+            parentparent2 = "";
+          }
+          const postData = {
+            degree: Math.max(max1, max2) + 1,
+            title: this.title,
+            kana: this.kana,
+            latest: this.result,
+            unit: this.unit,
+            parent: {
+              parent1: {
+                data: parentData1,
+                parent: parentparent1,
+              },
+              parent2: {
+                data: parentData2,
+                parent: parentparent2,
+              },
+              operator: this.operator,
             },
-            operator: this.operator,
-          },
-          likedCount: 0,
-          date: Date.now(),
-        };
-        this.appendData.push(postData);
+            likedCount: 0,
+            date: Date.now(),
+          };
+          this.appendData.push(postData);
 
-        let prefBool = (e) => {
-          return this.prefectures.some((ele) => {
-            return e.includes(ele);
-          });
-        };
-        let prefIndex = (e) => {
-          return this.prefectures.findIndex((ele) => {
-            return e.includes(ele);
-          });
-        };
-        let prefIndexKana = (e) => {
-          return this.prefecturesKana.findIndex((ele) => {
-            return e.includes(ele);
-          });
-        };
-        if (!this.isNumFor1) {
-          if (
-            this.calcParent1.title.includes("一人当たり") &&
-            this.calcParent1.degree === 1
-          ) {
-            const checkArr = [];
-            this.alreadyAutoCalc.forEach((e) => {
-              if (e.dat === this.calcParent2.title && e.ope === this.operator) {
-                checkArr.push(e.key);
-              }
+          let prefBool = (e) => {
+            return this.prefectures.some((ele) => {
+              return e.includes(ele);
             });
-            const getArr = this.perPersonData.filter((e) => {
-              return e !== this.calcParent1.title && !checkArr.includes(e);
+          };
+          let prefIndex = (e) => {
+            return this.prefectures.findIndex((ele) => {
+              return e.includes(ele);
             });
-            const auto = async () => {
-              let p = Promise.resolve();
-              getArr.forEach(async (e) => {
-                p = p
-                  .then(() => {
-                    const snapshot = getDoc(doc(db, "data", `${e}`));
-                    return snapshot;
+          };
+          let prefIndexKana = (e) => {
+            return this.prefecturesKana.findIndex((ele) => {
+              return e.includes(ele);
+            });
+          };
+
+          if (!this.isNumFor1) {
+            if (
+              this.calcParent1.title.includes("一人当たり") &&
+              this.calcParent1.degree === 1
+            ) {
+              const checkArr = [];
+              this.alreadyAutoCalc.forEach((e) => {
+                if (
+                  e.dat === this.calcParent2.title &&
+                  e.ope === this.operator
+                ) {
+                  checkArr.push(e.key);
+                }
+              });
+              const getArr = this.perPersonData.filter((e) => {
+                return e !== this.calcParent1.title && !checkArr.includes(e);
+              });
+              const auto = async () => {
+                let p = Promise.resolve();
+                getArr.forEach(async (e) => {
+                  p = p
+                    .then(() => {
+                      const snapshot = getDoc(doc(db, "data", `${e}`));
+                      return snapshot;
+                    })
+                    .then((snapshot) => {
+                      this.autoCalc.push(snapshot.data());
+                    });
+                });
+                await p;
+              };
+              await auto();
+              this.autoCalc.forEach((e) => {
+                let autoResult = 0;
+                switch (postData.parent.operator) {
+                  case "+":
+                    autoResult = e.latest + this.num2;
+                    break;
+                  case "-":
+                    autoResult = e.latest - this.num2;
+                    break;
+                  case "×":
+                    autoResult = e.latest * this.num2;
+                    break;
+                  case "÷":
+                    autoResult = e.latest / this.num2;
+                    break;
+                  default:
+                    alert("calcerror");
+                }
+                let titleFromAuto = e.title.slice(5);
+                let removeTitleStr = postData.parent.parent1.data.slice(5);
+                let newTitle =
+                  postData.title.replace(removeTitleStr, "") + titleFromAuto;
+                let kanaFromAuto = e.kana.slice(6);
+                let kanaIndex = this.data.findIndex((e) => {
+                  return e.title === postData.parent.parent1.data;
+                });
+                let removeKanaStr = this.data[kanaIndex].kana.slice(6);
+                let newKana =
+                  postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
+                if (
+                  this.data.some((e) => {
+                    return e.title !== newTitle;
                   })
-                  .then((snapshot) => {
-                    this.autoCalc.push(snapshot.data());
-                  });
-              });
-              await p;
-            };
-            await auto();
-            this.autoCalc.forEach((e) => {
-              let autoResult = 0;
-              switch (postData.parent.operator) {
-                case "+":
-                  autoResult = e.latest + this.num2;
-                  break;
-                case "-":
-                  autoResult = e.latest - this.num2;
-                  break;
-                case "×":
-                  autoResult = e.latest * this.num2;
-                  break;
-                case "÷":
-                  autoResult = e.latest / this.num2;
-                  break;
-                default:
-                  alert("calcerror");
-              }
-              let titleFromAuto = e.title.slice(5);
-              let removeTitleStr = postData.parent.parent1.data.slice(5);
-              let newTitle =
-                postData.title.replace(removeTitleStr, "") + titleFromAuto;
-              let kanaFromAuto = e.kana.slice(6);
-              let kanaIndex = this.data.findIndex((e) => {
-                return e.title === postData.parent.parent1.data;
-              });
-              let removeKanaStr = this.data[kanaIndex].kana.slice(6);
-              let newKana =
-                postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
-              if (
-                this.data.some((e) => {
-                  return e.title !== newTitle;
-                })
-              ) {
-                const autoData = {
-                  degree: 2,
-                  title: newTitle,
-                  kana: newKana,
-                  latest: autoResult,
-                  unit: e.unit,
-                  parent: {
-                    parent1: {
-                      data: parentData2,
-                      parent: "",
+                ) {
+                  const autoData = {
+                    degree: 2,
+                    title: newTitle,
+                    kana: newKana,
+                    latest: autoResult,
+                    unit: e.unit,
+                    parent: {
+                      parent1: {
+                        data: parentData2,
+                        parent: "",
+                      },
+                      parent2: {
+                        data: e.title,
+                        parent: "",
+                      },
+                      operator: postData.parent.operator,
                     },
-                    parent2: {
-                      data: e.title,
-                      parent: "",
-                    },
-                    operator: postData.parent.operator,
-                  },
-                  likedCount: 0,
-                  date: Date.now(),
-                };
-                this.appendData.push(autoData);
-              }
-            });
-            this.autoCalc = [];
-          } else if (
-            prefBool(this.calcParent1.title) &&
-            prefBool(this.title) &&
-            this.calcParent1.degree === 1
-          ) {
-            const checkArr = [];
-            this.alreadyAutoCalc.forEach((e) => {
-              if (e.dat === this.calcParent2.title && e.ope === this.operator) {
-                checkArr.push(e.key);
-              }
-            });
-            let checkChar = this.calcParent1.title.slice(
-              this.calcParent1.title.indexOf("の") + 1
-            );
-            const getArr = this.prefData.filter((e) => {
-              return (
-                e !== this.calcParent1.title &&
-                !checkArr.includes(e) &&
-                e.includes(checkChar)
+                    likedCount: 0,
+                    date: Date.now(),
+                  };
+                  this.appendData.push(autoData);
+                }
+              });
+              this.autoCalc = [];
+            } else if (
+              prefBool(this.calcParent1.title) &&
+              prefBool(this.title) &&
+              this.calcParent1.degree === 1
+            ) {
+              const checkArr = [];
+              this.alreadyAutoCalc.forEach((e) => {
+                if (
+                  e.dat === this.calcParent2.title &&
+                  e.ope === this.operator
+                ) {
+                  checkArr.push(e.key);
+                }
+              });
+              let checkChar = this.calcParent1.title.slice(
+                this.calcParent1.title.indexOf("の") + 1
               );
-            });
-            const auto = async () => {
-              let p = Promise.resolve();
-              getArr.forEach(async (e) => {
-                p = p
-                  .then(() => {
-                    const snapshot = getDoc(doc(db, "data", `${e}`));
-                    return snapshot;
-                  })
-                  .then((snapshot) => {
-                    this.autoCalc.push(snapshot.data());
-                  });
+              const getArr = this.prefData.filter((e) => {
+                return (
+                  e !== this.calcParent1.title &&
+                  !checkArr.includes(e) &&
+                  e.includes(checkChar)
+                );
               });
-              await p;
-            };
-            await auto();
-            this.autoCalc.forEach((e) => {
-              let autoResult = 0;
-              // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
-              let autoPref = this.prefectures[prefIndex(e.title)];
-              let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
-              let postPref = this.prefectures[prefIndex(postData.title)];
-              let postPrefKana =
-                this.prefecturesKana[prefIndexKana(postData.kana)];
-              switch (postData.parent.operator) {
-                case "+":
-                  autoResult = e.latest + this.num2;
-                  break;
-                case "-":
-                  autoResult = e.latest - this.num2;
-                  break;
-                case "×":
-                  autoResult = e.latest * this.num2;
-                  break;
-                case "÷":
-                  autoResult = e.latest / this.num2;
-                  break;
-                default:
-                  alert("calcerror");
-              }
-              let newTitle;
-              let newKana;
-              if (postData.title.includes("県")) {
-                if (autoPref === "東京") {
-                  newTitle = postData.title
-                    .replace(postPref + "県", autoPref + "都")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "けん", autoPrefKana + "都")
-                    .replace(postPrefKana, autoPrefKana);
-                } else if (autoPref === "大阪" || autoPref === "京都") {
-                  newTitle = postData.title
-                    .replace(postPref + "県", autoPref + "府")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "けん", autoPrefKana + "ふ")
-                    .replace(postPrefKana, autoPrefKana);
+              const auto = async () => {
+                let p = Promise.resolve();
+                getArr.forEach(async (e) => {
+                  p = p
+                    .then(() => {
+                      const snapshot = getDoc(doc(db, "data", `${e}`));
+                      return snapshot;
+                    })
+                    .then((snapshot) => {
+                      this.autoCalc.push(snapshot.data());
+                    });
+                });
+                await p;
+              };
+              await auto();
+              this.autoCalc.forEach((e) => {
+                let autoResult = 0;
+                // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
+                let autoPref = this.prefectures[prefIndex(e.title)];
+                let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
+                let postPref = this.prefectures[prefIndex(postData.title)];
+                let postPrefKana =
+                  this.prefecturesKana[prefIndexKana(postData.kana)];
+                switch (postData.parent.operator) {
+                  case "+":
+                    autoResult = e.latest + this.num2;
+                    break;
+                  case "-":
+                    autoResult = e.latest - this.num2;
+                    break;
+                  case "×":
+                    autoResult = e.latest * this.num2;
+                    break;
+                  case "÷":
+                    autoResult = e.latest / this.num2;
+                    break;
+                  default:
+                    alert("calcerror");
+                }
+                let newTitle;
+                let newKana;
+                if (postData.title.includes("県")) {
+                  if (autoPref === "東京") {
+                    newTitle = postData.title
+                      .replace(postPref + "県", autoPref + "都")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "けん", autoPrefKana + "都")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else if (autoPref === "大阪" || autoPref === "京都") {
+                    newTitle = postData.title
+                      .replace(postPref + "県", autoPref + "府")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "けん", autoPrefKana + "ふ")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else {
+                    newTitle = postData.title.replace(postPref, autoPref);
+                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                  }
+                } else if (postData.title.includes("府")) {
+                  if (autoPref === "東京") {
+                    newTitle = postData.title
+                      .replace(postPref + "府", autoPref + "都")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "ふ", autoPrefKana + "と")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else if (autoPref === "大阪" || autoPref === "京都") {
+                    newTitle = postData.title.replace(postPref, autoPref);
+                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                  } else {
+                    newTitle = postData.title
+                      .replace(postPref + "府", autoPref + "県")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "ふ", autoPrefKana + "けん")
+                      .replace(postPrefKana, autoPrefKana);
+                  }
+                } else if (postData.title.includes("都")) {
+                  if (autoPref === "東京") {
+                    newTitle = postData.title.replace(postPref, autoPref);
+                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                  } else if (autoPref === "大阪" || autoPref === "京都") {
+                    newTitle = postData.title
+                      .replace(postPref + "都", autoPref + "府")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "と", autoPrefKana + "ふ")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else {
+                    newTitle = postData.title
+                      .replace(postPref + "都", autoPref + "けん")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "と", autoPrefKana + "けん")
+                      .replace(postPrefKana, autoPrefKana);
+                  }
                 } else {
                   newTitle = postData.title.replace(postPref, autoPref);
                   newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                 }
-              } else if (postData.title.includes("府")) {
-                if (autoPref === "東京") {
-                  newTitle = postData.title
-                    .replace(postPref + "府", autoPref + "都")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "ふ", autoPrefKana + "と")
-                    .replace(postPrefKana, autoPrefKana);
-                } else if (autoPref === "大阪" || autoPref === "京都") {
-                  newTitle = postData.title.replace(postPref, autoPref);
-                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
-                } else {
-                  newTitle = postData.title
-                    .replace(postPref + "府", autoPref + "県")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "ふ", autoPrefKana + "けん")
-                    .replace(postPrefKana, autoPrefKana);
-                }
-              } else if (postData.title.includes("都")) {
-                if (autoPref === "東京") {
-                  newTitle = postData.title.replace(postPref, autoPref);
-                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
-                } else if (autoPref === "大阪" || autoPref === "京都") {
-                  newTitle = postData.title
-                    .replace(postPref + "都", autoPref + "府")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "と", autoPrefKana + "ふ")
-                    .replace(postPrefKana, autoPrefKana);
-                } else {
-                  newTitle = postData.title
-                    .replace(postPref + "都", autoPref + "けん")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "と", autoPrefKana + "けん")
-                    .replace(postPrefKana, autoPrefKana);
-                }
-              } else {
-                newTitle = postData.title.replace(postPref, autoPref);
-                newKana = postData.kana.replace(postPrefKana, autoPrefKana);
-              }
-              if (
-                this.data.some((ele) => {
-                  return ele.title !== newTitle;
-                })
-              ) {
-                const autoData = {
-                  degree: 2,
-                  title: newTitle,
-                  kana: newKana,
-                  latest: autoResult,
-                  unit: postData.unit,
-                  parent: {
-                    parent1: {
-                      data: parentData2,
-                      parent: "",
+                if (
+                  this.data.some((ele) => {
+                    return ele.title !== newTitle;
+                  })
+                ) {
+                  const autoData = {
+                    degree: 2,
+                    title: newTitle,
+                    kana: newKana,
+                    latest: autoResult,
+                    unit: postData.unit,
+                    parent: {
+                      parent1: {
+                        data: parentData2,
+                        parent: "",
+                      },
+                      parent2: {
+                        data: e.title,
+                        parent: "",
+                      },
+                      operator: postData.parent.operator,
                     },
-                    parent2: {
-                      data: e.title,
-                      parent: "",
-                    },
-                    operator: postData.parent.operator,
-                  },
-                  likedCount: 0,
-                  date: Date.now(),
-                };
-                this.appendData.push(autoData);
-              }
-            });
-            this.autoCalc = [];
+                    likedCount: 0,
+                    date: Date.now(),
+                  };
+                  this.appendData.push(autoData);
+                }
+              });
+              this.autoCalc = [];
+            }
           }
-        }
-        if (!this.isNumFor2) {
-          if (
-            this.calcParent2.title.includes("一人当たり") &&
-            this.calcParent2.degree === 1
-          ) {
-            const checkArr = [];
-            this.alreadyAutoCalc.forEach((e) => {
-              if (e.dat === this.calcParent1.title && e.ope === this.operator) {
-                checkArr.push(e.key);
-              }
-            });
-            const getArr = this.perPersonData.filter((e) => {
-              return e !== this.calcParent2.title && !checkArr.includes(e);
-            });
-            const auto = async () => {
-              let p = Promise.resolve();
-              getArr.forEach(async (e) => {
-                p = p
-                  .then(() => {
-                    const snapshot = getDoc(doc(db, "data", `${e}`));
-                    return snapshot;
+          if (!this.isNumFor2) {
+            if (
+              this.calcParent2.title.includes("一人当たり") &&
+              this.calcParent2.degree === 1
+            ) {
+              const checkArr = [];
+              this.alreadyAutoCalc.forEach((e) => {
+                if (
+                  e.dat === this.calcParent1.title &&
+                  e.ope === this.operator
+                ) {
+                  checkArr.push(e.key);
+                }
+              });
+              const getArr = this.perPersonData.filter((e) => {
+                return e !== this.calcParent2.title && !checkArr.includes(e);
+              });
+              const auto = async () => {
+                let p = Promise.resolve();
+                getArr.forEach(async (e) => {
+                  p = p
+                    .then(() => {
+                      const snapshot = getDoc(doc(db, "data", `${e}`));
+                      return snapshot;
+                    })
+                    .then((snapshot) => {
+                      this.autoCalc.push(snapshot.data());
+                    });
+                });
+                await p;
+              };
+              await auto();
+              this.autoCalc.forEach((e) => {
+                let autoResult = 0;
+                switch (postData.parent.operator) {
+                  case "+":
+                    autoResult = this.num1 + e.latest;
+                    break;
+                  case "-":
+                    autoResult = this.num1 - e.latest;
+                    break;
+                  case "×":
+                    autoResult = this.num1 * e.latest;
+                    break;
+                  case "÷":
+                    autoResult = this.num1 / e.latest;
+                    break;
+                  default:
+                    alert("calcerror");
+                }
+                let titleFromAuto = e.title.slice(5);
+                let removeTitleStr = postData.parent.parent2.data.slice(5);
+                let newTitle =
+                  postData.title.replace(removeTitleStr, "") + titleFromAuto;
+                let kanaFromAuto = e.kana.slice(6);
+                let kanaIndex = this.data.findIndex((e) => {
+                  return e.title === postData.parent.parent2.data;
+                });
+                let removeKanaStr = this.data[kanaIndex].kana.slice(6);
+                let newKana =
+                  postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
+                if (
+                  this.data.some((e) => {
+                    return e.title !== newTitle;
                   })
-                  .then((snapshot) => {
-                    this.autoCalc.push(snapshot.data());
-                  });
-              });
-              await p;
-            };
-            await auto();
-            this.autoCalc.forEach((e) => {
-              let autoResult = 0;
-              switch (postData.parent.operator) {
-                case "+":
-                  autoResult = this.num1 + e.latest;
-                  break;
-                case "-":
-                  autoResult = this.num1 - e.latest;
-                  break;
-                case "×":
-                  autoResult = this.num1 * e.latest;
-                  break;
-                case "÷":
-                  autoResult = this.num1 / e.latest;
-                  break;
-                default:
-                  alert("calcerror");
-              }
-              let titleFromAuto = e.title.slice(5);
-              let removeTitleStr = postData.parent.parent2.data.slice(5);
-              let newTitle =
-                postData.title.replace(removeTitleStr, "") + titleFromAuto;
-              let kanaFromAuto = e.kana.slice(6);
-              let kanaIndex = this.data.findIndex((e) => {
-                return e.title === postData.parent.parent2.data;
-              });
-              let removeKanaStr = this.data[kanaIndex].kana.slice(6);
-              let newKana =
-                postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
-              if (
-                this.data.some((e) => {
-                  return e.title !== newTitle;
-                })
-              ) {
-                const autoData = {
-                  degree: 2,
-                  title: newTitle,
-                  kana: newKana,
-                  latest: autoResult,
-                  unit: e.unit,
-                  parent: {
-                    parent1: {
-                      data: parentData1,
-                      parent: "",
+                ) {
+                  const autoData = {
+                    degree: 2,
+                    title: newTitle,
+                    kana: newKana,
+                    latest: autoResult,
+                    unit: e.unit,
+                    parent: {
+                      parent1: {
+                        data: parentData1,
+                        parent: "",
+                      },
+                      parent2: {
+                        data: e.title,
+                        parent: "",
+                      },
+                      operator: postData.parent.operator,
                     },
-                    parent2: {
-                      data: e.title,
-                      parent: "",
-                    },
-                    operator: postData.parent.operator,
-                  },
-                  likedCount: 0,
-                  date: Date.now(),
-                };
-                this.appendData.push(autoData);
-              }
-            });
-            this.autoCalc = [];
-          } else if (
-            prefBool(this.calcParent2.title) &&
-            prefBool(this.title) &&
-            this.calcParent2.degree === 1
-          ) {
-            const checkArr = [];
-            this.alreadyAutoCalc.forEach((e) => {
-              if (e.dat === this.calcParent1.title && e.ope === this.operator) {
-                checkArr.push(e.key);
-              }
-            });
-            let checkChar = this.calcParent1.title.slice(
-              this.calcParent2.title.indexOf("の") + 1
-            );
-            const getArr = this.prefData.filter((e) => {
-              return (
-                e !== this.calcParent2.title &&
-                !checkArr.includes(e) &&
-                e.includes(checkChar)
+                    likedCount: 0,
+                    date: Date.now(),
+                  };
+                  this.appendData.push(autoData);
+                }
+              });
+              this.autoCalc = [];
+            } else if (
+              prefBool(this.calcParent2.title) &&
+              prefBool(this.title) &&
+              this.calcParent2.degree === 1
+            ) {
+              const checkArr = [];
+              this.alreadyAutoCalc.forEach((e) => {
+                if (
+                  e.dat === this.calcParent1.title &&
+                  e.ope === this.operator
+                ) {
+                  checkArr.push(e.key);
+                }
+              });
+              let checkChar = this.calcParent1.title.slice(
+                this.calcParent2.title.indexOf("の") + 1
               );
-            });
-            const auto = async () => {
-              let p = Promise.resolve();
-              getArr.forEach(async (e) => {
-                p = p
-                  .then(() => {
-                    const snapshot = getDoc(doc(db, "data", `${e}`));
-                    return snapshot;
-                  })
-                  .then((snapshot) => {
-                    this.autoCalc.push(snapshot.data());
-                  });
+              const getArr = this.prefData.filter((e) => {
+                return (
+                  e !== this.calcParent2.title &&
+                  !checkArr.includes(e) &&
+                  e.includes(checkChar)
+                );
               });
-              await p;
-            };
-            await auto();
-            this.autoCalc.forEach((e) => {
-              let autoResult = 0;
-              // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
-              let autoPref = this.prefectures[prefIndex(e.title)];
-              let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
-              let postPref = this.prefectures[prefIndex(postData.title)];
-              let postPrefKana =
-                this.prefecturesKana[prefIndexKana(postData.kana)];
-              switch (postData.parent.operator) {
-                case "+":
-                  autoResult = this.num1 + e.latest;
-                  break;
-                case "-":
-                  autoResult = this.num1 - e.latest;
-                  break;
-                case "×":
-                  autoResult = this.num1 * e.latest;
-                  break;
-                case "÷":
-                  autoResult = this.num1 / e.latest;
-                  break;
-                default:
-                  alert("calcerror");
-              }
-              let newTitle;
-              let newKana;
-              if (postData.title.includes("県")) {
-                if (autoPref === "東京") {
-                  newTitle = postData.title
-                    .replace(postPref + "県", autoPref + "都")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "けん", autoPrefKana + "都")
-                    .replace(postPrefKana, autoPrefKana);
-                } else if (autoPref === "大阪" || autoPref === "京都") {
-                  newTitle = postData.title
-                    .replace(postPref + "県", autoPref + "府")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "けん", autoPrefKana + "ふ")
-                    .replace(postPrefKana, autoPrefKana);
+              const auto = async () => {
+                let p = Promise.resolve();
+                getArr.forEach(async (e) => {
+                  p = p
+                    .then(() => {
+                      const snapshot = getDoc(doc(db, "data", `${e}`));
+                      return snapshot;
+                    })
+                    .then((snapshot) => {
+                      this.autoCalc.push(snapshot.data());
+                    });
+                });
+                await p;
+              };
+              await auto();
+              this.autoCalc.forEach((e) => {
+                let autoResult = 0;
+                // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
+                let autoPref = this.prefectures[prefIndex(e.title)];
+                let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
+                let postPref = this.prefectures[prefIndex(postData.title)];
+                let postPrefKana =
+                  this.prefecturesKana[prefIndexKana(postData.kana)];
+                switch (postData.parent.operator) {
+                  case "+":
+                    autoResult = this.num1 + e.latest;
+                    break;
+                  case "-":
+                    autoResult = this.num1 - e.latest;
+                    break;
+                  case "×":
+                    autoResult = this.num1 * e.latest;
+                    break;
+                  case "÷":
+                    autoResult = this.num1 / e.latest;
+                    break;
+                  default:
+                    alert("calcerror");
+                }
+                let newTitle;
+                let newKana;
+                if (postData.title.includes("県")) {
+                  if (autoPref === "東京") {
+                    newTitle = postData.title
+                      .replace(postPref + "県", autoPref + "都")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "けん", autoPrefKana + "都")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else if (autoPref === "大阪" || autoPref === "京都") {
+                    newTitle = postData.title
+                      .replace(postPref + "県", autoPref + "府")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "けん", autoPrefKana + "ふ")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else {
+                    newTitle = postData.title.replace(postPref, autoPref);
+                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                  }
+                } else if (postData.title.includes("府")) {
+                  if (autoPref === "東京") {
+                    newTitle = postData.title
+                      .replace(postPref + "府", autoPref + "都")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "ふ", autoPrefKana + "と")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else if (autoPref === "大阪" || autoPref === "京都") {
+                    newTitle = postData.title.replace(postPref, autoPref);
+                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                  } else {
+                    newTitle = postData.title
+                      .replace(postPref + "府", autoPref + "県")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "ふ", autoPrefKana + "けん")
+                      .replace(postPrefKana, autoPrefKana);
+                  }
+                } else if (postData.title.includes("都")) {
+                  if (autoPref === "東京") {
+                    newTitle = postData.title.replace(postPref, autoPref);
+                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
+                  } else if (autoPref === "大阪" || autoPref === "京都") {
+                    newTitle = postData.title
+                      .replace(postPref + "都", autoPref + "府")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "と", autoPrefKana + "ふ")
+                      .replace(postPrefKana, autoPrefKana);
+                  } else {
+                    newTitle = postData.title
+                      .replace(postPref + "都", autoPref + "けん")
+                      .replace(postPref, autoPref);
+                    newKana = postData.kana
+                      .replace(postPrefKana + "と", autoPrefKana + "けん")
+                      .replace(postPrefKana, autoPrefKana);
+                  }
                 } else {
                   newTitle = postData.title.replace(postPref, autoPref);
                   newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                 }
-              } else if (postData.title.includes("府")) {
-                if (autoPref === "東京") {
-                  newTitle = postData.title
-                    .replace(postPref + "府", autoPref + "都")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "ふ", autoPrefKana + "と")
-                    .replace(postPrefKana, autoPrefKana);
-                } else if (autoPref === "大阪" || autoPref === "京都") {
-                  newTitle = postData.title.replace(postPref, autoPref);
-                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
-                } else {
-                  newTitle = postData.title
-                    .replace(postPref + "府", autoPref + "県")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "ふ", autoPrefKana + "けん")
-                    .replace(postPrefKana, autoPrefKana);
-                }
-              } else if (postData.title.includes("都")) {
-                if (autoPref === "東京") {
-                  newTitle = postData.title.replace(postPref, autoPref);
-                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
-                } else if (autoPref === "大阪" || autoPref === "京都") {
-                  newTitle = postData.title
-                    .replace(postPref + "都", autoPref + "府")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "と", autoPrefKana + "ふ")
-                    .replace(postPrefKana, autoPrefKana);
-                } else {
-                  newTitle = postData.title
-                    .replace(postPref + "都", autoPref + "けん")
-                    .replace(postPref, autoPref);
-                  newKana = postData.kana
-                    .replace(postPrefKana + "と", autoPrefKana + "けん")
-                    .replace(postPrefKana, autoPrefKana);
-                }
-              } else {
-                newTitle = postData.title.replace(postPref, autoPref);
-                newKana = postData.kana.replace(postPrefKana, autoPrefKana);
-              }
-              if (
-                this.data.some((ele) => {
-                  return ele.title !== newTitle;
-                })
-              ) {
-                const autoData = {
-                  degree: 2,
-                  title: newTitle,
-                  kana: newKana,
-                  latest: autoResult,
-                  unit: postData.unit,
-                  parent: {
-                    parent1: {
-                      data: parentData1,
-                      parent: "",
+                if (
+                  this.data.some((ele) => {
+                    return ele.title !== newTitle;
+                  })
+                ) {
+                  const autoData = {
+                    degree: 2,
+                    title: newTitle,
+                    kana: newKana,
+                    latest: autoResult,
+                    unit: postData.unit,
+                    parent: {
+                      parent1: {
+                        data: parentData1,
+                        parent: "",
+                      },
+                      parent2: {
+                        data: e.title,
+                        parent: "",
+                      },
+                      operator: postData.parent.operator,
                     },
-                    parent2: {
-                      data: e.title,
-                      parent: "",
-                    },
-                    operator: postData.parent.operator,
-                  },
-                  likedCount: 0,
-                  date: Date.now(),
-                };
-                this.appendData.push(autoData);
-              }
-            });
-            this.autoCalc = [];
+                    likedCount: 0,
+                    date: Date.now(),
+                  };
+                  this.appendData.push(autoData);
+                }
+              });
+              this.autoCalc = [];
+            }
           }
-        }
-        const ref = doc(db, "data", "overView");
-        this.appendData.forEach(async (e) => {
-          await setDoc(doc(this.commonLef, `${e.title}`), e);
-          if (e.parent.parent1.data.includes("一人当たり")) {
+          const ref = doc(db, "data", "overView");
+          this.appendData.forEach(async (e) => {
+            await setDoc(doc(this.commonLef, `${e.title}`), e);
+            if (e.parent.parent1.data.includes("一人当たり")) {
+              await updateDoc(ref, {
+                autoCalc: arrayUnion({
+                  dat: `${e.parent.parent2.data}`,
+                  ope: `${e.parent.operator}`,
+                  key: `${e.parent.parent1.data}`,
+                }),
+              });
+            } else if (e.parent.parent2.data.includes("一人当たり")) {
+              await updateDoc(ref, {
+                autoCalc: arrayUnion({
+                  dat: `${e.parent.parent1.data}`,
+                  ope: `${e.parent.operator}`,
+                  key: `${e.parent.parent2.data}`,
+                }),
+              });
+            }
+            if (prefBool(e.parent.parent1.data)) {
+              await updateDoc(ref, {
+                autoCalc: arrayUnion({
+                  dat: `${e.parent.parent2.data}`,
+                  ope: `${e.parent.operator}`,
+                  key: `${e.parent.parent1.data}`,
+                }),
+              });
+            } else if (prefBool(e.parent.parent2.data)) {
+              await updateDoc(ref, {
+                autoCalc: arrayUnion({
+                  dat: `${e.parent.parent1.data}`,
+                  ope: `${e.parent.operator}`,
+                  key: `${e.parent.parent2.data}`,
+                }),
+              });
+            }
             await updateDoc(ref, {
-              autoCalc: arrayUnion({
-                dat: `${e.parent.parent2.data}`,
-                ope: `${e.parent.operator}`,
-                key: `${e.parent.parent1.data}`,
+              index: arrayUnion({
+                title: e.title,
+                kana: e.kana,
               }),
             });
-          } else if (e.parent.parent2.data.includes("一人当たり")) {
-            await updateDoc(ref, {
-              autoCalc: arrayUnion({
-                dat: `${e.parent.parent1.data}`,
-                ope: `${e.parent.operator}`,
-                key: `${e.parent.parent2.data}`,
-              }),
-            });
-          }
-          if (prefBool(e.parent.parent1.data)) {
-            await updateDoc(ref, {
-              autoCalc: arrayUnion({
-                dat: `${e.parent.parent2.data}`,
-                ope: `${e.parent.operator}`,
-                key: `${e.parent.parent1.data}`,
-              }),
-            });
-          } else {
-            await updateDoc(ref, {
-              autoCalc: arrayUnion({
-                dat: `${e.parent.parent1.data}`,
-                ope: `${e.parent.operator}`,
-                key: `${e.parent.parent2.data}`,
-              }),
-            });
-          }
-          await updateDoc(ref, {
-            index: arrayUnion({
-              title: e.title,
-              kana: e.kana,
-            }),
           });
-        });
+        }
         this.appendData = [];
       },
       initialize: function () {
         this.num1 = "";
         this.num2 = "";
+        this.num3 = "";
         this.calcParent1 = "";
         this.calcParent2 = "";
+        this.calcParent3 = "";
         this.operator = "";
+        this.operator2 = "";
+        this.howManyData = 2;
         this.result = "";
         this.roundedResult = "";
-        this.index1 = 0;
         this.isNumFor1 = false;
-        this.index2 = 0;
         this.isNumFor2 = false;
+        this.isNumFor3 = false;
         this.title = "";
         this.kana = "";
         this.unit = "";
         this.firstData = "";
         this.secondData = "";
+        this.thirdData = "";
         this.discription = "";
         this.intResult = 0;
         this.digit = 0;
@@ -1084,26 +1210,66 @@ export default {
           forPrimary.append(title, refLink, copyButton);
         }
         if ("parent1" in this.showingData.parent) {
-          let parent1Title = this.showingData.parent.parent1.data;
-          let parent2Title = this.showingData.parent.parent2.data;
-          let parentOpe = this.showingData.parent.operator;
-          const parentData1 = document.createElement("h3");
-          const parentOperator = document.createElement("h3");
-          const parentData2 = document.createElement("h3");
-          parentData1.textContent = parent1Title;
-          parentOperator.textContent = parentOpe;
-          parentData2.textContent = parent2Title;
-          parentData1.onclick = async () => {
-            const snapshot = await getDoc(doc(db, "data", `${parent1Title}`));
-            this.showingData = snapshot.data();
-            this.goData();
-          };
-          parentData2.onclick = async () => {
-            const snapshot = await getDoc(doc(db, "data", `${parent2Title}`));
-            this.showingData = snapshot.data();
-            this.goData();
-          };
-          parentDataBox.append(parentData1, parentOperator, parentData2);
+          if ("parent3" in this.showingData.parent) {
+            let parent1Title = this.showingData.parent.parent1.data;
+            let parent2Title = this.showingData.parent.parent2.data;
+            let parent3Title = this.showingData.parent.parent3.data;
+            let parentOpe = this.showingData.parent.operator;
+            let parentOpe2 = this.showingData.parent.operator2;
+            const parentData1 = document.createElement("h3");
+            const parentOperator = document.createElement("h3");
+            const parentData2 = document.createElement("h3");
+            const parentOperator2 = document.createElement("h3");
+            const parentData3 = document.createElement("h3");
+            parentData1.textContent = parent1Title;
+            parentOperator.textContent = parentOpe;
+            parentData2.textContent = parent2Title;
+            parentOperator2.textContent = parentOpe2;
+            parentData3.textContent = parent3Title;
+            parentData1.onclick = async () => {
+              const snapshot = await getDoc(doc(db, "data", `${parent1Title}`));
+              this.showingData = snapshot.data();
+              this.goData();
+            };
+            parentData2.onclick = async () => {
+              const snapshot = await getDoc(doc(db, "data", `${parent2Title}`));
+              this.showingData = snapshot.data();
+              this.goData();
+            };
+            parentData3.onclick = async () => {
+              const snapshot = await getDoc(doc(db, "data", `${parent3Title}`));
+              this.showingData = snapshot.data();
+              this.goData();
+            };
+            parentDataBox.append(
+              parentData1,
+              parentOperator,
+              parentData2,
+              parentOperator2,
+              parentData3
+            );
+          } else {
+            let parent1Title = this.showingData.parent.parent1.data;
+            let parent2Title = this.showingData.parent.parent2.data;
+            let parentOpe = this.showingData.parent.operator;
+            const parentData1 = document.createElement("h3");
+            const parentOperator = document.createElement("h3");
+            const parentData2 = document.createElement("h3");
+            parentData1.textContent = parent1Title;
+            parentOperator.textContent = parentOpe;
+            parentData2.textContent = parent2Title;
+            parentData1.onclick = async () => {
+              const snapshot = await getDoc(doc(db, "data", `${parent1Title}`));
+              this.showingData = snapshot.data();
+              this.goData();
+            };
+            parentData2.onclick = async () => {
+              const snapshot = await getDoc(doc(db, "data", `${parent2Title}`));
+              this.showingData = snapshot.data();
+              this.goData();
+            };
+            parentDataBox.append(parentData1, parentOperator, parentData2);
+          }
         }
       },
       goSearch: function () {
@@ -1188,9 +1354,102 @@ export default {
         this.kana = "";
       }
     },
+    handleNameInput() {
+      this.kana = autokana.getFurigana();
+    },
+    addData() {
+      const dataNumberButton = document.getElementById("data-number-button");
+      if (this.howManyData === 2) {
+        this.howManyData = 3;
+        dataNumberButton.textContent = "データの数を減らす";
+      } else {
+        this.howManyData = 2;
+        dataNumberButton.textContent = "データの数を増やす";
+      }
+
+      //複数データ追加の場合↓
+      // this.howManyData = this.howManyData + 1;
+      // const calcDataArea = document.getElementById("calc-data-area");
+      // const box = document.createElement("div");
+      // const newSelect = document.createElement("select");
+      // newSelect.name = "post-particle";
+      // newSelect.id = `operator${this.howManyData}`;
+      // newSelect.onchange = this.changeDisc();
+      // let opeArr = ["+", "-", "-", "÷"];
+      // opeArr.forEach((e) => {
+      //   const ope = document.createElement("option");
+      //   ope.textContent = e;
+      //   ope.value = e;
+      //   newSelect.append(ope);
+      // });
+      // const newDataList = document.createElement("datalist");
+      // newDataList.id = `data${this.howManyData}`;
+      // this.data.forEach((e) => {
+      //   const option = document.createElement("option");
+      //   option.value = e.title;
+      //   option.textContent = e.title;
+      //   newDataList.append(option);
+      // });
+      // const newInput = document.createElement("input");
+      // newInput.type = "text";
+      // newInput.autocomplete = "on";
+      // newInput.setAttribute("list", `data${this.howManyData}`);
+      // newInput.id = `data-input-${this.howManyData}`;
+      // newInput.onchange = this.changeDisc();
+      // const newButton = document.createElement("button");
+      // newButton.textContent = "数値を入力する";
+      // newButton.onclick = () => {
+      //   newInput.value = "";
+      //   if (newInput.type === "text") {
+      //     while (newDataList.lastChild) {
+      //       newDataList.lastChild.remove();
+      //     }
+      //     newInput.type = "number";
+      //     newButton.textContent = "データを選択する";
+      //   } else {
+      //     this.data.forEach((e) => {
+      //       const option = document.createElement("option");
+      //       option.value = e.title;
+      //       option.textContent = e.title;
+      //       newDataList.append(option);
+      //     });
+      //     newInput.type = "text";
+      //     newButton.textContent = "数値を入力する";
+      //   }
+      // };
+      // box.append(newSelect, newInput, newDataList, newButton);
+      // calcDataArea.appendChild(box);
+      // const dataDecrease = document.createElement("button");
+      // dataDecrease.id = "decrease-button";
+      // dataDecrease.textContent = "データの数を減らす";
+      // dataDecrease.onclick = () => {
+      //   if (calcDataArea.childElementCount >= 5) {
+      //     this.howManyData = this.howManyData - 1;
+      //     calcDataArea.lastChild.remove();
+      //     if (calcDataArea.childElementCount === 4) {
+      //       const buttonArea = document.getElementById("button-area");
+      //       buttonArea.lastChild.remove();
+      //     }
+      //   }
+      // };
+      // if (document.getElementById("decrease-button") == null) {
+      //   const buttonArea = document.getElementById("button-area");
+      //   buttonArea.appendChild(dataDecrease);
+      // }
+    },
+    thirdStart() {
+      const data3 = document.getElementById("data3");
+      this.data.forEach((e) => {
+        const option = document.createElement("option");
+        option.value = e.title;
+        option.textContent = e.title;
+        data3.append(option);
+      });
+      this.alreadyThirdStarted = true;
+    },
     numChangeForF() {
       this.firstData = "";
-      const firstDataInput = document.getElementById("first-data-input");
+      const firstDataInput = document.getElementById("data-input-1");
       const numChangeButtonForF = document.getElementById(
         "num-change-button-forf"
       );
@@ -1202,12 +1461,12 @@ export default {
         firstDataInput.type = "number";
         numChangeButtonForF.textContent = "データを選択する";
       } else {
-        const data1 = document.getElementById("data1");
+        const datalist = document.getElementById("data1");
         this.data.forEach((e) => {
           const optionFor1 = document.createElement("option");
           optionFor1.value = e.title;
           optionFor1.textContent = e.title;
-          data1.append(optionFor1);
+          datalist.append(optionFor1);
         });
         firstDataInput.type = "text";
         numChangeButtonForF.textContent = "数値を入力する";
@@ -1215,7 +1474,7 @@ export default {
     },
     numChangeForS() {
       this.secondData = "";
-      const secondDataInput = document.getElementById("second-data-input");
+      const secondDataInput = document.getElementById("data-input-2");
       const numChangeButtonForS = document.getElementById(
         "num-change-button-fors"
       );
@@ -1227,32 +1486,65 @@ export default {
         secondDataInput.type = "number";
         numChangeButtonForS.textContent = "データを選択する";
       } else {
-        const data2 = document.getElementById("data2");
+        const datalist = document.getElementById("data2");
         this.data.forEach((e) => {
           const optionFor2 = document.createElement("option");
           optionFor2.value = e.title;
           optionFor2.textContent = e.title;
-          data2.append(optionFor2);
+          datalist.append(optionFor2);
         });
         secondDataInput.type = "text";
         numChangeButtonForS.textContent = "数値を入力する";
       }
     },
+    numChangeForT() {
+      this.thirdData = "";
+      const thirdDataInput = document.getElementById("data-input-3");
+      const numChangeButtonForT = document.getElementById(
+        "num-change-button-fort"
+      );
+      if (thirdDataInput.type === "text") {
+        const datalist = document.getElementById("data3");
+        while (datalist.lastChild) {
+          datalist.lastChild.remove();
+        }
+        thirdDataInput.type = "number";
+        numChangeButtonForT.textContent = "データを選択する";
+      } else {
+        const datalist = document.getElementById("data3");
+        this.data.forEach((e) => {
+          const optionFor3 = document.createElement("option");
+          optionFor3.value = e.title;
+          optionFor3.textContent = e.title;
+          datalist.append(optionFor3);
+        });
+        thirdDataInput.type = "text";
+        numChangeButtonForT.textContent = "数値を入力する";
+      }
+    },
     async calc() {
+      let additionalData = () => {
+        if (this.howManyData >= 3) {
+          return this.thirdData === "" && this.operator2 === "";
+        } else {
+          return false;
+        }
+      };
       if (
         this.title == "" ||
         this.kana == "" ||
         this.firstData == "-" ||
         this.firstData == "" ||
         this.operator == "" ||
+        additionalData() ||
         this.secondData == "-" ||
         this.secondData == "" ||
         this.unit == ""
       ) {
         alert("未入力の部分があります");
       } else {
-        const firstDataInput = document.getElementById("first-data-input");
-        const secondDataInput = document.getElementById("second-data-input");
+        const firstDataInput = document.getElementById("data-input-1");
+        const secondDataInput = document.getElementById("data-input-2");
         if (firstDataInput.type === "text") {
           const d1 = await getDoc(doc(db, "data", `${this.firstData}`));
           this.calcParent1 = d1.data();
@@ -1289,27 +1581,86 @@ export default {
           default:
             alert("calcerror");
         }
+        if (this.howManyData === 3) {
+          const thirdDataInput = document.getElementById("data-input-3");
+          if (thirdDataInput.type === "text") {
+            const d3 = await getDoc(doc(db, "data", `${this.thirdData}`));
+            this.calcParent3 = d3.data();
+            this.num3 = this.calcParent3.latest;
+          } else if (thirdDataInput.type === "number") {
+            this.num3 = Number(this.thirdData);
+            this.isNumFor3 = true;
+          } else {
+            alert("type3error");
+          }
+          switch (this.operator) {
+            case "+":
+              this.result = this.result + this.num2;
+              break;
+            case "-":
+              this.result = this.result - this.num2;
+              break;
+            case "×":
+              this.result = this.result * this.num2;
+              break;
+            case "÷":
+              this.result = this.result / this.num2;
+              break;
+            default:
+              alert("calcerror");
+          }
+        }
         let isChecked = false;
         const checkQ = query(
           this.commonLef,
           where("latest", "==", this.result)
         );
         const checkD = await getDocs(checkQ);
-        checkD.forEach(async (e) => {
-          if (
-            (e.data().parent.parent1.data === this.firstData &&
-              e.data().parent.parent2.data === this.secondData) ||
-            (e.data().parent.parent2.data === this.firstData &&
-              e.data().parent.parent1.data === this.secondData)
-          ) {
-            this.showingData = e.data();
-            this.isGuess = false;
-            isChecked = true;
-            await this.start();
-            this.goData();
-            alert("既にデータがあります。");
-          }
-        });
+        if (this.howManyData === 2) {
+          checkD.forEach(async (e) => {
+            if (
+              (e.data().parent.parent1.data === this.firstData &&
+                e.data().parent.parent2.data === this.secondData) ||
+              (e.data().parent.parent2.data === this.firstData &&
+                e.data().parent.parent1.data === this.secondData)
+            ) {
+              this.showingData = e.data();
+              this.isGuess = false;
+              isChecked = true;
+              await this.start();
+              this.goData();
+              alert("既にデータがあります。");
+            }
+          });
+        } else {
+          checkD.forEach(async (e) => {
+            if (e.data().parent.parent3.data !== undefined) {
+              let checkParentArr = [
+                e.data().parent.parent1.data,
+                e.data().parent.parent2.data,
+                e.data().parent.parent3.data,
+              ];
+              let thisParentArr = [
+                this.calcParent1,
+                this.calcParent2,
+                this.calcParent3,
+              ];
+              thisParentArr = thisParentArr.filter((e) => {
+                return checkParentArr.some((ele) => {
+                  return ele !== e;
+                });
+              });
+              if (thisParentArr === []) {
+                this.showingData = e.data();
+                this.isGuess = false;
+                isChecked = true;
+                await this.start();
+                this.goData();
+                alert("既にデータがあります。");
+              }
+            }
+          });
+        }
         if (!isChecked) {
           this.intResult = Math.round(this.result);
           this.digit = this.intResult.toString().length;
@@ -1383,6 +1734,9 @@ export default {
       this.secondData = "一人当たり二酸化炭素排出量";
       this.unit = "キログラム";
     },
+  },
+  mounted() {
+    autokana = AutoKana.bind("#name", "#furigana");
   },
   components: { appBarVue },
 };

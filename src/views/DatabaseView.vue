@@ -3,6 +3,7 @@
   <div>
     <button @click="back">戻る</button>
     <button @click="test">テスト</button>
+    <button @click="test2">テスト2</button>
     <div>
       <h4>F9キーか登録ボタンを押すとデータが登録できます。</h4>
       <label for="furigana">ふりがな</label>
@@ -45,6 +46,9 @@ export default {
       ref: "",
       name: "",
       furigana: "",
+      dataBox: {
+        first: "1",
+      },
       prefectures: [
         "北海道",
         "青森県",
@@ -159,8 +163,12 @@ export default {
       this.furigana = autokana.getFurigana();
     },
     test() {
-      let str = "あいうえお";
-      console.log(str.replace("あい", ""));
+      this.second = "";
+      console.log(this.second);
+    },
+    test2() {
+      this.second = 3;
+      console.log(this.second);
     },
   },
   mounted() {
