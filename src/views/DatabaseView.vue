@@ -1,5 +1,9 @@
 <template>
-  <appBarVue />
+  <div class="app-bar">
+    <h1>アップバー</h1>
+    <button @click="goDev">dev</button>
+    <button @click="change"></button>
+  </div>
   <div>
     <button @click="back">戻る</button>
     <button @click="test">テスト</button>
@@ -28,7 +32,6 @@
 <script>
 import * as AutoKana from "vanilla-autokana";
 let autokana;
-import appBarVue from "@/components/AppBar.vue";
 import {
   collection,
   setDoc,
@@ -170,6 +173,9 @@ export default {
       this.second = 3;
       console.log(this.second);
     },
+    goDev() {
+      this.$router.push("/database");
+    },
   },
   mounted() {
     autokana = AutoKana.bind("#name", "#furigana");
@@ -182,8 +188,12 @@ export default {
       }
     };
   },
-  components: { appBarVue },
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.app-bar {
+  height: 15vh;
+  background-color: #aeaeae;
+}
+</style>

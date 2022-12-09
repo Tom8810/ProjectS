@@ -1,5 +1,12 @@
 <template>
-  <appBarVue />
+  <div class="app-bar">
+    <h1>アップバー</h1>
+    <button @click="goDev">dev</button>
+    <button v-if="isGuess && isAlreadyStarted" @click="change">
+      データベースへ
+    </button>
+    <button v-if="!isGuess && isAlreadyStarted" @click="change">推測へ</button>
+  </div>
   <div class="body">
     <aside class="side-bar">
       <div class="favorite-post" id="favorite-post">
@@ -18,7 +25,7 @@
       </button>
       <button @click="goDB">データを閲覧する</button>
     </div>
-    <div class="main" v-if="isGuess">
+    <div class="main" :style="{ display: guesser }">
       <button @click="test_auto">自動</button>
       <div class="title-area">
         <h3>推測テーマ</h3>
@@ -118,7 +125,7 @@
       </div>
       <button @click="next">次へ</button>
     </div>
-    <div class="main" v-else>
+    <div class="main" :style="{ display: viewer }">
       <div class="search" id="search">
         <h2>データベース</h2>
         <h3>検索</h3>
@@ -179,12 +186,13 @@ import {
   increment,
 } from "@firebase/firestore";
 import { db } from "@/firebase.js";
-import appBarVue from "@/components/AppBar.vue";
 
 export default {
   data() {
     return {
       isGuess: true,
+      guesser: "block",
+      viewer: "none",
       commonLef: collection(db, "data"),
       num1: "",
       num2: "",
@@ -320,25 +328,68 @@ export default {
       ],
       alreadyGoSearch: false,
       changeDisc: function () {
-        switch (this.operator) {
-          case "+":
-            this.discription =
-              this.firstData + "に" + this.secondData + "を足したもの";
-            break;
-          case "-":
-            this.discription =
-              this.firstData + "から" + this.secondData + "を引いたもの";
-            break;
-          case "×":
-            this.discription =
-              this.firstData + "に" + this.secondData + "をかけたもの";
-            break;
-          case "÷":
-            this.discription =
-              this.firstData + "を" + this.secondData + "で割ったもの";
-            break;
-          default:
-            this.discription = "";
+        if (this.howManyData === 2) {
+          switch (this.operator) {
+            case "+":
+              this.discription =
+                this.firstData + "に" + this.secondData + "を足したもの";
+              break;
+            case "-":
+              this.discription =
+                this.firstData + "から" + this.secondData + "を引いたもの";
+              break;
+            case "×":
+              this.discription =
+                this.firstData + "に" + this.secondData + "をかけたもの";
+              break;
+            case "÷":
+              this.discription =
+                this.firstData + "を" + this.secondData + "で割ったもの";
+              break;
+            default:
+              this.discription = "";
+          }
+        } else {
+          switch (this.operator) {
+            case "+":
+              this.discription =
+                this.firstData + "に" + this.secondData + "を足したもの";
+              break;
+            case "-":
+              this.discription =
+                this.firstData + "から" + this.secondData + "を引いたもの";
+              break;
+            case "×":
+              this.discription =
+                this.firstData + "に" + this.secondData + "をかけたもの";
+              break;
+            case "÷":
+              this.discription =
+                this.firstData + "を" + this.secondData + "で割ったもの";
+              break;
+            default:
+              this.discription = "";
+          }
+          switch (this.operator2) {
+            case "+":
+              this.discription =
+                this.discription + "に" + this.thirdData + "を足したもの";
+              break;
+            case "-":
+              this.discription =
+                this.discription + "から" + this.thirdData + "を引いたもの";
+              break;
+            case "×":
+              this.discription =
+                this.discription + "に" + this.thirdData + "をかけたもの";
+              break;
+            case "÷":
+              this.discription =
+                this.discription + "を" + this.thirdData + "で割ったもの";
+              break;
+            default:
+              this.discription = "";
+          }
         }
       },
       async start() {
@@ -346,6 +397,10 @@ export default {
           const start = document.getElementById("start");
           start.classList.add("hidden");
           this.isAlreadyStarted = true;
+          if (this.isGuess) {
+            this.guesser = "block";
+            this.viewer = "none";
+          }
           const snapshot = await getDoc(doc(db, "data", "overView"));
           snapshot.data().index.forEach((e) => {
             this.data.push(e);
@@ -375,15 +430,15 @@ export default {
         }
       },
       round: function () {
-        if (this.intResult >= 100) {
+        if (this.result >= 1000) {
           this.roundedResult =
             Math.round(this.intResult / 10 ** this.roundDigit) *
             10 ** this.roundDigit;
         } else {
           if (this.result.toString().length >= 5) {
             this.roundedResult =
-              Math.round(this.result / 10 ** this.roundDigit) *
-              10 ** this.roundDigit;
+              Math.round(this.result * 10 ** (-1 * this.roundDigit)) /
+              10 ** (-1 * this.roundDigit);
           } else {
             this.roundedResult = this.result;
           }
@@ -1125,17 +1180,16 @@ export default {
         this.intResult = Math.round(this.showingData.latest);
         this.digit = this.intResult.toString().length;
         this.digitUnitCoeff = 0;
-        if (this.digit <= 4) {
-          this.roundDigit = this.digit - 3;
-          this.round();
-        } else {
+        if (this.result >= 1000) {
           this.roundDigit = this.digit - 2;
           while (this.digitUnitCoeff < this.digit - 4) {
-            // Coeff = "係数"
             this.digitUnitCoeff = this.digitUnitCoeff + 4;
           }
-          this.round();
+        } else {
+          this.roundDigit = this.digit - 3;
         }
+
+        this.round();
         const digitUpButton = document.createElement("button");
         digitUpButton.textContent = "ざっくり度アップ";
         const digitDownButton = document.createElement("button");
@@ -1150,19 +1204,43 @@ export default {
           }
         };
         digitDownButton.onclick = () => {
-          if (this.roundDigit >= 1) {
-            this.roundDigit = this.roundDigit - 1;
-            this.round();
-            resultJa.textContent = this.roundedResult + this.showingData.unit;
+          if (this.result >= 1000) {
+            if (this.roundDigit >= 1) {
+              this.roundDigit = this.roundDigit - 1;
+              this.round();
+              resultJa.textContent = this.roundedResult + this.showingData.unit;
+            } else {
+              alert("これ以上正確度を上げられません。");
+            }
           } else {
-            alert("これ以上正確度を上げられません。");
+            if (
+              this.roundDigit >
+              this.intResult.toString().length -
+                this.result.toString().length +
+                1
+            ) {
+              this.roundDigit = this.roundDigit - 1;
+              this.round();
+              resultJa.textContent = this.roundedResult + this.showingData.unit;
+            } else {
+              alert("これ以上正確度を上げられません。");
+            }
           }
         };
         resultJa.textContent = this.roundedResult + this.showingData.unit;
         dataTitle.textContent = this.showingData.title;
         dataNum.textContent = this.showingData.latest;
         dataDegree.textContent = this.showingData.degree;
-        dataBox.append(resultJa, digitUpButton, digitDownButton);
+
+        if (
+          (this.result < 100 &&
+            this.result.toString().split(".")[1].length === 1) ||
+          (this.result < 10 && this.result.toString().split(".")[1].length < 3)
+        ) {
+          dataBox.append(resultJa);
+        } else {
+          dataBox.append(resultJa, digitUpButton, digitDownButton);
+        }
         if (this.showingData.degree > 1) {
           const goodButton = document.createElement("div");
           goodButton.textContent = "正しいと思う";
@@ -1301,6 +1379,8 @@ export default {
           favData.textContent = e.data().title;
           favData.onclick = async () => {
             this.isGuess = false;
+            this.guesser = "none";
+            this.viewer = "block";
             const showingFavorite = await getDoc(
               doc(db, "data", `${e.data().title}`)
             );
@@ -1320,6 +1400,8 @@ export default {
           newData.textContent = e.data().title;
           newData.onclick = async () => {
             this.isGuess = false;
+            this.guesser = "none";
+            this.viewer = "block";
             const showingNew = await getDoc(
               doc(db, "data", `${e.data().title}`)
             );
@@ -1332,6 +1414,8 @@ export default {
       },
       goDB: async function () {
         this.isGuess = false;
+        this.guesser = "none";
+        this.viewer = "block";
         await this.start();
         this.goSearch();
         this.alreadyGoSearch = true;
@@ -1626,6 +1710,8 @@ export default {
             ) {
               this.showingData = e.data();
               this.isGuess = false;
+              this.guesser = "none";
+              this.viewer = "block";
               isChecked = true;
               await this.start();
               this.goData();
@@ -1653,6 +1739,8 @@ export default {
               if (thisParentArr === []) {
                 this.showingData = e.data();
                 this.isGuess = false;
+                this.guesser = "none";
+                this.viewer = "block";
                 isChecked = true;
                 await this.start();
                 this.goData();
@@ -1664,16 +1752,16 @@ export default {
         if (!isChecked) {
           this.intResult = Math.round(this.result);
           this.digit = this.intResult.toString().length;
-          if (this.digit <= 4) {
-            this.roundDigit = this.digit - 3;
-            this.round();
-          } else {
+          if (this.result >= 1000) {
             this.roundDigit = this.digit - 2;
             while (this.digitUnitCoeff < this.digit - 4) {
               this.digitUnitCoeff = this.digitUnitCoeff + 4;
             }
-            this.round();
+          } else {
+            this.roundDigit = this.digit - 3;
           }
+
+          this.round();
           const resultBox = document.getElementById("result-box");
           const resultJa = document.createElement("h1");
           const resultNum = document.createElement("h5");
@@ -1691,7 +1779,10 @@ export default {
             }
           };
           digitDownButton.onclick = () => {
-            if (this.roundDigit >= 1) {
+            if (
+              this.roundDigit >=
+              this.intResult.toString().length - this.result.toString().length
+            ) {
               this.roundDigit = this.roundDigit - 1;
               this.round();
               resultJa.textContent = this.roundedResult + this.unit;
@@ -1734,11 +1825,32 @@ export default {
       this.secondData = "一人当たり二酸化炭素排出量";
       this.unit = "キログラム";
     },
+    goDev() {
+      this.$router.push("/database");
+    },
+    change() {
+      if (this.isGuess) {
+        if (!this.alreadyGoSearch) {
+          this.goDB();
+        } else {
+          this.isGuess = !this.isGuess;
+          this.guesser = "none";
+          this.viewer = "block";
+        }
+      } else {
+        if (!this.isAlreadyStarted) {
+          this.start();
+        } else {
+          this.isGuess = !this.isGuess;
+          this.guesser = "block";
+          this.viewer = "none";
+        }
+      }
+    },
   },
   mounted() {
     autokana = AutoKana.bind("#name", "#furigana");
   },
-  components: { appBarVue },
 };
 </script>
 
