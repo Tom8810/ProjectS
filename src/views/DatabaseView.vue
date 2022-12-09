@@ -1,8 +1,13 @@
 <template>
-  <appBarVue />
+  <div class="app-bar">
+    <h1>アップバー</h1>
+    <button @click="goDev">dev</button>
+    <button @click="change"></button>
+  </div>
   <div>
     <button @click="back">戻る</button>
     <button @click="test">テスト</button>
+    <button @click="test2">テスト2</button>
     <div>
       <h4>F9キーか登録ボタンを押すとデータが登録できます。</h4>
       <label for="furigana">ふりがな</label>
@@ -27,7 +32,6 @@
 <script>
 import * as AutoKana from "vanilla-autokana";
 let autokana;
-import appBarVue from "@/components/AppBar.vue";
 import {
   collection,
   setDoc,
@@ -45,6 +49,9 @@ export default {
       ref: "",
       name: "",
       furigana: "",
+      dataBox: {
+        first: "1",
+      },
       prefectures: [
         "北海道",
         "青森県",
@@ -159,8 +166,15 @@ export default {
       this.furigana = autokana.getFurigana();
     },
     test() {
-      let str = "あいうえお";
-      console.log(str.replace("あい", ""));
+      this.second = "";
+      console.log(this.second);
+    },
+    test2() {
+      this.second = 3;
+      console.log(this.second);
+    },
+    goDev() {
+      this.$router.push("/database");
     },
   },
   mounted() {
@@ -174,8 +188,12 @@ export default {
       }
     };
   },
-  components: { appBarVue },
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.app-bar {
+  height: 15vh;
+  background-color: #aeaeae;
+}
+</style>
