@@ -35,10 +35,7 @@
           id="name"
           v-model="title"
           @change="changeDisc()"
-          @input="handleNameInput"
         />
-        <h3>テーマのよみがな(平仮名)</h3>
-        <input name="furigana" id="furigana" v-model="kana" />
       </div>
       <div class="calc-area">
         <div id="calc-data-area">
@@ -129,6 +126,31 @@
       <div class="search" id="search">
         <h2>データベース</h2>
         <h3>検索</h3>
+        <h3>検索方法</h3>
+        <select v-model="searchStyle" @change="sortInit">
+          <option value="input" selected>直接入力検索</option>
+          <option value="sort">絞り込み検索</option>
+        </select>
+        <div v-if="searchStyle === `sort`">
+          <select v-model="sortStyle" @change="sortInit">
+            <option value="genre">ジャンルで絞り込み</option>
+            <option value="keyword">キーワードで絞り込み</option>
+          </select>
+          <select
+            v-model="sortGenre"
+            v-if="sortStyle === `genre`"
+            @change="goGenreSort"
+          >
+            <option value="pref">都道府県データ</option>
+            <option value="population">人口データ</option>
+            <option value="per">一人当たりデータ</option>
+          </select>
+          <div v-else>
+            <input type="text" v-model="sortKeyword" />
+            <button @click="goKeywordSort">絞り込み条件を追加</button>
+          </div>
+        </div>
+        <div class="sort-box" id="sort-box"></div>
         <input
           type="text"
           v-model="searchText"
@@ -169,8 +191,6 @@
 </template>
 
 <script>
-import * as AutoKana from "vanilla-autokana";
-let autokana;
 import {
   collection,
   getDoc,
@@ -210,13 +230,13 @@ export default {
       isNumFor2: false,
       isNumFor3: false,
       data: [],
+      sortData: [],
       alreadyAutoCalc: [],
       autoCalc: [],
       perPersonData: [],
       prefData: [],
       appendData: [],
       title: "",
-      kana: "",
       unit: "",
       firstData: "",
       secondData: "",
@@ -226,6 +246,11 @@ export default {
       digit: 0,
       roundDigit: 0,
       digitUnitCoeff: 0,
+      searchStyle: "input",
+      sortStyle: "genre",
+      sortGenre: "",
+      sortKeyword: "",
+      sortCondition: [],
       searchText: "",
       showingData: "",
       prefectures: [
@@ -276,55 +301,6 @@ export default {
         "宮崎",
         "鹿児島",
         "沖縄",
-      ],
-      prefecturesKana: [
-        "ほっかいどう",
-        "あおもり",
-        "いわて",
-        "みやぎ",
-        "あきた",
-        "やまがた",
-        "ふくしま",
-        "いばらき",
-        "とちぎ",
-        "ぐんま",
-        "さいたま",
-        "ちば",
-        "とうきょう",
-        "かながわ",
-        "にいがた",
-        "とやま",
-        "いしかわ",
-        "ふくい",
-        "やまなし",
-        "ながの",
-        "ぎふ",
-        "しずおか",
-        "あいち",
-        "みえ",
-        "しが",
-        "きょうと",
-        "おおさか",
-        "ひょうご",
-        "なら",
-        "わかやま",
-        "とっとり",
-        "しまね",
-        "おかやま",
-        "ひろしま",
-        "やまぐち",
-        "とくしま",
-        "かがわ",
-        "えひめ",
-        "こうち",
-        "ふくおか",
-        "さが",
-        "ながさき",
-        "くまもと",
-        "おおいた",
-        "みやざき",
-        "かごしま",
-        "おきなわ",
       ],
       alreadyGoSearch: false,
       changeDisc: function () {
@@ -421,7 +397,7 @@ export default {
               const optionFor1 = document.createElement("option");
               const optionFor2 = document.createElement("option");
               optionFor1.value = optionFor2.value = e.title;
-              optionFor1.textContent = optionFor2.textContent = e.title;
+              optionFor1.textContent = optionFor2.textContent = `(${e.degree})`;
               data1.append(optionFor1);
               data2.append(optionFor2);
             });
@@ -493,7 +469,6 @@ export default {
           const postData = {
             degree: Math.max(max1, max2, max3) + 1,
             title: this.title,
-            kana: this.kana,
             latest: this.result,
             unit: this.unit,
             parent: {
@@ -522,7 +497,7 @@ export default {
             await updateDoc(ref, {
               index: arrayUnion({
                 title: e.title,
-                kana: e.kana,
+                degree: e.degree,
               }),
             });
           });
@@ -546,7 +521,6 @@ export default {
           const postData = {
             degree: Math.max(max1, max2) + 1,
             title: this.title,
-            kana: this.kana,
             latest: this.result,
             unit: this.unit,
             parent: {
@@ -572,11 +546,6 @@ export default {
           };
           let prefIndex = (e) => {
             return this.prefectures.findIndex((ele) => {
-              return e.includes(ele);
-            });
-          };
-          let prefIndexKana = (e) => {
-            return this.prefecturesKana.findIndex((ele) => {
               return e.includes(ele);
             });
           };
@@ -635,13 +604,6 @@ export default {
                 let removeTitleStr = postData.parent.parent1.data.slice(5);
                 let newTitle =
                   postData.title.replace(removeTitleStr, "") + titleFromAuto;
-                let kanaFromAuto = e.kana.slice(6);
-                let kanaIndex = this.data.findIndex((e) => {
-                  return e.title === postData.parent.parent1.data;
-                });
-                let removeKanaStr = this.data[kanaIndex].kana.slice(6);
-                let newKana =
-                  postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
                 if (
                   this.data.some((e) => {
                     return e.title !== newTitle;
@@ -650,7 +612,6 @@ export default {
                   const autoData = {
                     degree: 2,
                     title: newTitle,
-                    kana: newKana,
                     latest: autoResult,
                     unit: e.unit,
                     parent: {
@@ -714,10 +675,7 @@ export default {
                 let autoResult = 0;
                 // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
                 let autoPref = this.prefectures[prefIndex(e.title)];
-                let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
                 let postPref = this.prefectures[prefIndex(postData.title)];
-                let postPrefKana =
-                  this.prefecturesKana[prefIndexKana(postData.kana)];
                 switch (postData.parent.operator) {
                   case "+":
                     autoResult = e.latest + this.num2;
@@ -735,67 +693,44 @@ export default {
                     alert("calcerror");
                 }
                 let newTitle;
-                let newKana;
                 if (postData.title.includes("県")) {
                   if (autoPref === "東京") {
                     newTitle = postData.title
                       .replace(postPref + "県", autoPref + "都")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "けん", autoPrefKana + "都")
-                      .replace(postPrefKana, autoPrefKana);
                   } else if (autoPref === "大阪" || autoPref === "京都") {
                     newTitle = postData.title
                       .replace(postPref + "県", autoPref + "府")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "けん", autoPrefKana + "ふ")
-                      .replace(postPrefKana, autoPrefKana);
                   } else {
                     newTitle = postData.title.replace(postPref, autoPref);
-                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                   }
                 } else if (postData.title.includes("府")) {
                   if (autoPref === "東京") {
                     newTitle = postData.title
                       .replace(postPref + "府", autoPref + "都")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "ふ", autoPrefKana + "と")
-                      .replace(postPrefKana, autoPrefKana);
                   } else if (autoPref === "大阪" || autoPref === "京都") {
                     newTitle = postData.title.replace(postPref, autoPref);
-                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                   } else {
                     newTitle = postData.title
                       .replace(postPref + "府", autoPref + "県")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "ふ", autoPrefKana + "けん")
-                      .replace(postPrefKana, autoPrefKana);
                   }
                 } else if (postData.title.includes("都")) {
                   if (autoPref === "東京") {
                     newTitle = postData.title.replace(postPref, autoPref);
-                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                   } else if (autoPref === "大阪" || autoPref === "京都") {
                     newTitle = postData.title
                       .replace(postPref + "都", autoPref + "府")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "と", autoPrefKana + "ふ")
-                      .replace(postPrefKana, autoPrefKana);
                   } else {
                     newTitle = postData.title
                       .replace(postPref + "都", autoPref + "けん")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "と", autoPrefKana + "けん")
-                      .replace(postPrefKana, autoPrefKana);
                   }
                 } else {
                   newTitle = postData.title.replace(postPref, autoPref);
-                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                 }
                 if (
                   this.data.some((ele) => {
@@ -805,7 +740,6 @@ export default {
                   const autoData = {
                     degree: 2,
                     title: newTitle,
-                    kana: newKana,
                     latest: autoResult,
                     unit: postData.unit,
                     parent: {
@@ -882,13 +816,6 @@ export default {
                 let removeTitleStr = postData.parent.parent2.data.slice(5);
                 let newTitle =
                   postData.title.replace(removeTitleStr, "") + titleFromAuto;
-                let kanaFromAuto = e.kana.slice(6);
-                let kanaIndex = this.data.findIndex((e) => {
-                  return e.title === postData.parent.parent2.data;
-                });
-                let removeKanaStr = this.data[kanaIndex].kana.slice(6);
-                let newKana =
-                  postData.kana.replace(removeKanaStr, "") + kanaFromAuto;
                 if (
                   this.data.some((e) => {
                     return e.title !== newTitle;
@@ -897,7 +824,6 @@ export default {
                   const autoData = {
                     degree: 2,
                     title: newTitle,
-                    kana: newKana,
                     latest: autoResult,
                     unit: e.unit,
                     parent: {
@@ -961,10 +887,7 @@ export default {
                 let autoResult = 0;
                 // 今回自動計算する県がautoPref、postDataで計算されている県がpostPref
                 let autoPref = this.prefectures[prefIndex(e.title)];
-                let autoPrefKana = this.prefecturesKana[prefIndexKana(e.kana)];
                 let postPref = this.prefectures[prefIndex(postData.title)];
-                let postPrefKana =
-                  this.prefecturesKana[prefIndexKana(postData.kana)];
                 switch (postData.parent.operator) {
                   case "+":
                     autoResult = this.num1 + e.latest;
@@ -982,67 +905,44 @@ export default {
                     alert("calcerror");
                 }
                 let newTitle;
-                let newKana;
                 if (postData.title.includes("県")) {
                   if (autoPref === "東京") {
                     newTitle = postData.title
                       .replace(postPref + "県", autoPref + "都")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "けん", autoPrefKana + "都")
-                      .replace(postPrefKana, autoPrefKana);
                   } else if (autoPref === "大阪" || autoPref === "京都") {
                     newTitle = postData.title
                       .replace(postPref + "県", autoPref + "府")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "けん", autoPrefKana + "ふ")
-                      .replace(postPrefKana, autoPrefKana);
                   } else {
                     newTitle = postData.title.replace(postPref, autoPref);
-                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                   }
                 } else if (postData.title.includes("府")) {
                   if (autoPref === "東京") {
                     newTitle = postData.title
                       .replace(postPref + "府", autoPref + "都")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "ふ", autoPrefKana + "と")
-                      .replace(postPrefKana, autoPrefKana);
                   } else if (autoPref === "大阪" || autoPref === "京都") {
                     newTitle = postData.title.replace(postPref, autoPref);
-                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                   } else {
                     newTitle = postData.title
                       .replace(postPref + "府", autoPref + "県")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "ふ", autoPrefKana + "けん")
-                      .replace(postPrefKana, autoPrefKana);
                   }
                 } else if (postData.title.includes("都")) {
                   if (autoPref === "東京") {
                     newTitle = postData.title.replace(postPref, autoPref);
-                    newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                   } else if (autoPref === "大阪" || autoPref === "京都") {
                     newTitle = postData.title
                       .replace(postPref + "都", autoPref + "府")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "と", autoPrefKana + "ふ")
-                      .replace(postPrefKana, autoPrefKana);
                   } else {
                     newTitle = postData.title
                       .replace(postPref + "都", autoPref + "けん")
                       .replace(postPref, autoPref);
-                    newKana = postData.kana
-                      .replace(postPrefKana + "と", autoPrefKana + "けん")
-                      .replace(postPrefKana, autoPrefKana);
                   }
                 } else {
                   newTitle = postData.title.replace(postPref, autoPref);
-                  newKana = postData.kana.replace(postPrefKana, autoPrefKana);
                 }
                 if (
                   this.data.some((ele) => {
@@ -1052,7 +952,6 @@ export default {
                   const autoData = {
                     degree: 2,
                     title: newTitle,
-                    kana: newKana,
                     latest: autoResult,
                     unit: postData.unit,
                     parent: {
@@ -1115,7 +1014,7 @@ export default {
             await updateDoc(ref, {
               index: arrayUnion({
                 title: e.title,
-                kana: e.kana,
+                degree: e.degree,
               }),
             });
           });
@@ -1138,7 +1037,6 @@ export default {
         this.isNumFor2 = false;
         this.isNumFor3 = false;
         this.title = "";
-        this.kana = "";
         this.unit = "";
         this.firstData = "";
         this.secondData = "";
@@ -1359,7 +1257,7 @@ export default {
           const searchResultBox = document.getElementById("search-result-box");
           this.data.forEach((e) => {
             const resultCard = document.createElement("option");
-            resultCard.textContent = e.title;
+            resultCard.textContent = `(${e.degree})`;
             resultCard.value = e.title;
             searchResultBox.append(resultCard);
           });
@@ -1420,27 +1318,21 @@ export default {
         this.goSearch();
         this.alreadyGoSearch = true;
       },
+      goSort: () => {
+        const searchResultBox = document.getElementById("search-result-box");
+        while (searchResultBox.lastChild) {
+          searchResultBox.lastChild.remove();
+        }
+        this.sortData.forEach((e) => {
+          const resultCard = document.createElement("option");
+          resultCard.textContent = `(${e.degree})`;
+          resultCard.value = e.title;
+          searchResultBox.append(resultCard);
+        });
+      },
     };
   },
   methods: {
-    isKana() {
-      let tmp = [];
-
-      this.kana.split("").forEach(function (char) {
-        if (char.match(/^[\u3040-\u309f]+$/)) {
-          tmp.push(char);
-        }
-      });
-
-      if (tmp.length > 0) {
-        this.kana = tmp.join("");
-      } else {
-        this.kana = "";
-      }
-    },
-    handleNameInput() {
-      this.kana = autokana.getFurigana();
-    },
     addData() {
       const dataNumberButton = document.getElementById("data-number-button");
       if (this.howManyData === 2) {
@@ -1616,7 +1508,6 @@ export default {
       };
       if (
         this.title == "" ||
-        this.kana == "" ||
         this.firstData == "-" ||
         this.firstData == "" ||
         this.operator == "" ||
@@ -1817,9 +1708,92 @@ export default {
     textDelete() {
       this.searchText = "";
     },
+    goKeywordSort() {
+      const sortBox = document.getElementById("sort-box");
+      this.sortCondition.push(this.sortKeyword);
+      this.sortData = this.data;
+      this.sortCondition.forEach((e) => {
+        this.sortData = this.sortData.filter((ele) => {
+          return ele.title.includes(e);
+        });
+      });
+      this.goSort();
+      const container = document.createElement("div");
+      const sortName = document.createElement("h3");
+      const sortDeleteButton = document.createElement("button");
+      sortName.textContent = this.sortKeyword;
+      sortDeleteButton.textContent = "絞り込みを解除";
+      sortDeleteButton.onclick = () => {
+        let deleteEle = sortName.textContent;
+        this.sortCondition = this.sortCondition.filter((e) => {
+          return e !== deleteEle;
+        });
+        this.sortData = this.data;
+        this.sortCondition.forEach((e) => {
+          this.sortData = this.sortData.filter((ele) => {
+            return ele.title.includes(e);
+          });
+        });
+        this.goSort();
+        while (container.lastChild) {
+          container.lastChild.remove();
+        }
+      };
+      this.sortKeyword = "";
+      container.append(sortName, sortDeleteButton);
+      sortBox.appendChild(container);
+    },
+    goGenreSort() {
+      let prefBool = (e) => {
+        return this.prefectures.some((ele) => {
+          return e.includes(ele);
+        });
+      };
+      switch (this.sortGenre) {
+        case "pref":
+          this.sortData = this.data.filter((e) => {
+            return prefBool(e.title);
+          });
+          this.goSort();
+          break;
+
+        case "population":
+          this.sortData = this.data.filter((e) => {
+            return e.title.includes("人口データ");
+          });
+          this.goSort();
+          break;
+
+        case "per":
+          this.sortData = this.data.filter((e) => {
+            return e.title.includes("一人当たり");
+          });
+          this.goSort();
+          break;
+
+        default:
+          alert("error");
+      }
+    },
+    sortInit() {
+      const sortBox = document.getElementById("sort-box");
+      const searchResultBox = document.getElementById("search-result-box");
+      while (sortBox.lastChild) {
+        sortBox.lastChild.remove();
+      }
+      while (searchResultBox.lastChild) {
+        searchResultBox.lastChild.remove();
+      }
+      this.searchText = "";
+      this.data.forEach((e) => {
+        const resultCard = document.createElement("option");
+        resultCard.textContent = `(${e.degree})`;
+        resultCard.value = e.title;
+        searchResultBox.append(resultCard);
+      });
+    },
     test_auto() {
       this.title = "秋田県の二酸化炭素排出量";
-      this.kana = "あきたけんのにさんかたんそはいしゅつりょう";
       this.firstData = "秋田県の人口データ";
       this.operator = "×";
       this.secondData = "一人当たり二酸化炭素排出量";
@@ -1847,9 +1821,6 @@ export default {
         }
       }
     },
-  },
-  mounted() {
-    autokana = AutoKana.bind("#name", "#furigana");
   },
 };
 </script>
