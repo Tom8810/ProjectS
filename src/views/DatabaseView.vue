@@ -4,18 +4,21 @@
     <button @click="goDev">dev</button>
     <button @click="change"></button>
   </div>
+  <input type="text" list="data" autocomplete="on" />
+  <datalist id="data">
+    <option value="あいう" class="option">あいう</option>
+    <option value="かきく">かきく</option>
+  </datalist>
   <div>
     <button @click="back">戻る</button>
     <button @click="test">テスト</button>
     <button @click="test2">テスト2</button>
     <div>
       <h4>F9キーか登録ボタンを押すとデータが登録できます。</h4>
-      <label for="furigana">ふりがな</label>
-      <input name="furigana" id="furigana" v-model="furigana" />
     </div>
     <div>
       <label for="name">タイトル</label>
-      <input name="name" id="name" v-model="name" @input="handleNameInput" />
+      <input name="name" id="name" v-model="name" />
     </div>
     <h2>データ</h2>
     <input type="text" v-model="data" />
@@ -30,8 +33,6 @@
 </template>
 
 <script>
-import * as AutoKana from "vanilla-autokana";
-let autokana;
 import {
   collection,
   setDoc,
@@ -48,7 +49,6 @@ export default {
       year: "",
       ref: "",
       name: "",
-      furigana: "",
       dataBox: {
         first: "1",
       },
@@ -106,7 +106,6 @@ export default {
         const postData = {
           degree: 1,
           title: this.name,
-          kana: this.furigana,
           latest: Number(this.data),
           year: Number(this.year),
           ref: this.ref,
@@ -117,8 +116,8 @@ export default {
         const ref = doc(db, "data", "overView");
         await updateDoc(ref, {
           index: arrayUnion({
-            kana: `${this.furigana}`,
             title: `${this.name}`,
+            degree: postData.degree,
           }),
         });
         if (this.name.includes("一人当たり")) {
@@ -139,31 +138,12 @@ export default {
         this.year = "";
         this.ref = "";
         this.name = "";
-        this.furigana = "";
       },
     };
   },
   methods: {
-    isKana() {
-      let tmp = [];
-
-      this.title.split("").forEach(function (char) {
-        if (char.match(/^[\u3040-\u309f]+$/)) {
-          tmp.push(char);
-        }
-      });
-
-      if (tmp.length > 0) {
-        this.kana = tmp.join("");
-      } else {
-        this.kana = "";
-      }
-    },
     back() {
       this.$router.push("/");
-    },
-    handleNameInput() {
-      this.furigana = autokana.getFurigana();
     },
     test() {
       this.second = "";
@@ -178,7 +158,6 @@ export default {
     },
   },
   mounted() {
-    autokana = AutoKana.bind("#name", "#furigana");
     window.onload = function () {
       document.getElementById("name").focus();
     };
@@ -195,5 +174,9 @@ export default {
 .app-bar {
   height: 15vh;
   background-color: #aeaeae;
+}
+
+.option {
+  background-color: aqua;
 }
 </style>
