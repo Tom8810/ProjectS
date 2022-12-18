@@ -3,6 +3,8 @@
 </template>
 
 <style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;700&display=swap");
+
 *,
 ::after,
 ::before {
@@ -11,11 +13,16 @@
 }
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: #000;
+}
+.button:hover {
+  transform: scale(1.1);
+  transition-duration: 0.5s;
+  cursor: pointer;
 }
 
 nav {
