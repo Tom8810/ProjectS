@@ -3,13 +3,15 @@
 </template>
 
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap");
 
 *,
 ::after,
 ::before {
   margin: 0;
   padding: 0;
+  line-height: 1;
+  letter-spacing: 0.1em;
 }
 
 #app {
