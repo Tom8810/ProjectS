@@ -76,7 +76,7 @@
             <h3 class="main-title-leading">推測テーマ</h3>
             <h3>Theme</h3>
           </div>
-          <div class="main-content-box">
+          <div class="main-content-box" v-if="!isAlreadyGuess">
             <input
               type="text"
               class="main-input"
@@ -86,9 +86,14 @@
               @change="changeDisc()"
             />
           </div>
+          <div class="main-content-box" v-else>
+            <div class="main-input result-title tint">
+              <h2>{{ title }}</h2>
+            </div>
+          </div>
         </div>
-        <div class="guess-unit main-box">
-          <div class="main-title-box" v-if="!isAlreadyGuess">
+        <div class="guess-unit main-box" v-if="!isAlreadyGuess">
+          <div class="main-title-box">
             <h3 class="main-title-leading">単位</h3>
             <h3>Unit</h3>
           </div>
@@ -122,6 +127,12 @@
           <div class="main-title-box" v-else>
             <h3 class="main-title-leading">計算結果</h3>
             <h3>Result</h3>
+            <div class="digit-up-button button" @click="digitUp">
+              <h4>ざっくり表示</h4>
+            </div>
+            <div class="digit-down-button button" @click="digitDown">
+              <h4>きっちり表示</h4>
+            </div>
           </div>
           <div class="main-content-box guess-data-area" v-if="!isAlreadyGuess">
             <div class="first-data">
@@ -140,7 +151,7 @@
                 id="num-change-button-forf"
                 @click="numChangeForF"
               >
-                <h4>数値を入力</h4>
+                <h4 id="num-change-text-forf">数値を入力</h4>
               </div>
             </div>
             <div class="first-ope">
@@ -171,7 +182,7 @@
                 id="num-change-button-fors"
                 @click="numChangeForS"
               >
-                <h4>数値を入力</h4>
+                <h4 id="num-change-text-fors">数値を入力</h4>
               </div>
             </div>
             <div class="second-ope" v-if="howManyData === 3">
@@ -203,11 +214,18 @@
                 id="num-change-button-fort"
                 @click="numChangeForT"
               >
-                <h4>数値を入力</h4>
+                <h4 id="num-change-text-fort">数値を入力</h4>
               </div>
             </div>
           </div>
-          <div class="main-content-box" v-else></div>
+          <div class="main-content-box" v-else>
+            <div class="main-input result-data tint">
+              <h2>
+                {{ roundedResult
+                }}<span class="result-data-unit">{{ unit }}</span>
+              </h2>
+            </div>
+          </div>
         </div>
       </div>
       <div class="main-row">
@@ -216,7 +234,7 @@
             <h3 class="main-title-leading">推測式</h3>
             <h3>Equation</h3>
           </div>
-          <div class="main-content-box equation-area" v-if="!isAlreadyGuess">
+          <div class="main-content-box equation-area">
             <h2>
               {{ title }} =
               <span class="discription">{{ discription }}</span>
@@ -224,7 +242,12 @@
           </div>
         </div>
         <div class="guess-button-area">
-          <button @click="calc">計算</button>
+          <div class="guess-button button" @click="calc" v-if="!isAlreadyGuess">
+            <h3>推測</h3>
+          </div>
+          <div class="next-button button" @click="next" v-else>
+            <h3>次へ</h3>
+          </div>
         </div>
       </div>
 
@@ -1605,6 +1628,20 @@ export default {
         let str = e.substr(0, num - 1);
         return str + "...";
       },
+      dataSet: () => {
+        const data1 = document.getElementById("data1");
+        const data2 = document.getElementById("data2");
+        if (data1.childElementCount === 0) {
+          this.data.forEach((e) => {
+            const optionFor1 = document.createElement("option");
+            const optionFor2 = document.createElement("option");
+            optionFor1.value = optionFor2.value = e.title;
+            optionFor1.textContent = optionFor2.textContent = `(${e.degree})`;
+            data1.append(optionFor1);
+            data2.append(optionFor2);
+          });
+        }
+      },
     };
   },
   methods: {
@@ -1697,7 +1734,7 @@ export default {
       this.data.forEach((e) => {
         const option = document.createElement("option");
         option.value = e.title;
-        option.textContent = e.title;
+        option.textContent = `(${e.degree})`;
         data3.append(option);
       });
       this.alreadyThirdStarted = true;
@@ -1705,16 +1742,15 @@ export default {
     numChangeForF() {
       this.firstData = "";
       const firstDataInput = document.getElementById("data-input-1");
-      const numChangeButtonForF = document.getElementById(
-        "num-change-button-forf"
-      );
+      const numChangeTextForF = document.getElementById("num-change-text-forf");
       if (firstDataInput.type === "text") {
         const datalist = document.getElementById("data1");
         while (datalist.lastChild) {
           datalist.lastChild.remove();
         }
         firstDataInput.type = "number";
-        numChangeButtonForF.textContent = "データを選択する";
+        numChangeTextForF.style.fontSize = "1.2vw";
+        numChangeTextForF.textContent = "データを選択する";
       } else {
         const datalist = document.getElementById("data1");
         this.data.forEach((e) => {
@@ -1724,22 +1760,22 @@ export default {
           datalist.append(optionFor1);
         });
         firstDataInput.type = "text";
-        numChangeButtonForF.textContent = "数値を入力する";
+        numChangeTextForF.style.fontSize = "1.2vw";
+        numChangeTextForF.textContent = "数値を入力する";
       }
     },
     numChangeForS() {
       this.secondData = "";
       const secondDataInput = document.getElementById("data-input-2");
-      const numChangeButtonForS = document.getElementById(
-        "num-change-button-fors"
-      );
+      const numChangeTextForS = document.getElementById("num-change-text-fors");
       if (secondDataInput.type === "text") {
         const datalist = document.getElementById("data2");
         while (datalist.lastChild) {
           datalist.lastChild.remove();
         }
         secondDataInput.type = "number";
-        numChangeButtonForS.textContent = "データを選択する";
+        numChangeTextForS.style.fontSize = "1.2vw";
+        numChangeTextForS.textContent = "データを選択する";
       } else {
         const datalist = document.getElementById("data2");
         this.data.forEach((e) => {
@@ -1749,22 +1785,22 @@ export default {
           datalist.append(optionFor2);
         });
         secondDataInput.type = "text";
-        numChangeButtonForS.textContent = "数値を入力する";
+        numChangeTextForS.style.fontSize = "1.2vw";
+        numChangeTextForS.textContent = "数値を入力する";
       }
     },
     numChangeForT() {
       this.thirdData = "";
       const thirdDataInput = document.getElementById("data-input-3");
-      const numChangeButtonForT = document.getElementById(
-        "num-change-button-fort"
-      );
+      const numChangeTextForT = document.getElementById("num-change-text-fort");
       if (thirdDataInput.type === "text") {
         const datalist = document.getElementById("data3");
         while (datalist.lastChild) {
           datalist.lastChild.remove();
         }
         thirdDataInput.type = "number";
-        numChangeButtonForT.textContent = "データを選択する";
+        numChangeTextForT.style.fontSize = "1.2vw";
+        numChangeTextForT.textContent = "データを選択する";
       } else {
         const datalist = document.getElementById("data3");
         this.data.forEach((e) => {
@@ -1774,7 +1810,8 @@ export default {
           datalist.append(optionFor3);
         });
         thirdDataInput.type = "text";
-        numChangeButtonForT.textContent = "数値を入力する";
+        numChangeTextForT.style.fontSize = "1.2vw";
+        numChangeTextForT.textContent = "数値を入力する";
       }
     },
     async calc() {
@@ -1967,20 +2004,50 @@ export default {
           resultJa.textContent = this.roundedResult + this.unit;
           resultNum.textContent = this.result;
           resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
-          this.dataPost();
+          const guessTitle = document.querySelector(".guess-title");
+          const guessData = document.querySelector(".guess-data");
+          guessTitle.classList.add("after-guess");
+          guessData.classList.add("after-guess");
+          if (this.title !== "てすと３") {
+            this.dataPost();
+          }
           this.isAlreadyGuess = true;
         }
       }
     },
-    next() {
+    digitUp() {
+      if (this.roundDigit <= this.digit - 2) {
+        this.roundDigit = this.roundDigit + 1;
+        this.round();
+      } else {
+        alert("これ以上ざっくり度を上げられません。");
+      }
+    },
+    digitDown() {
+      if (
+        this.roundDigit >=
+        this.intResult.toString().length - this.result.toString().length
+      ) {
+        this.roundDigit = this.roundDigit - 1;
+        this.round();
+      } else {
+        alert("これ以上正確度を上げられません。");
+      }
+    },
+    async next() {
       const resultBox = document.getElementById("result-box");
       const resultArea = document.getElementById("result-area");
       const guessBox = document.getElementById("guess-box");
+      const guessTitle = document.querySelector(".guess-title");
+      const guessData = document.querySelector(".guess-data");
+      guessData.classList.remove("after-guess");
+      guessTitle.classList.remove("after-guess");
       resultArea.style.display = "none";
       guessBox.style.display = "block";
       while (resultBox.lastChild) {
         resultBox.removeChild(resultBox.lastChild);
       }
+      this.isAlreadyGuess = false;
       this.num1 = "";
       this.num2 = "";
       this.num3 = "";
@@ -2006,7 +2073,8 @@ export default {
       this.roundDigit = 0;
       this.digitUnitCoeff = 0;
       this.searchText = "";
-      this.isAlreadyGuess = false;
+      await this.start();
+      this.dataSet();
     },
     async getData() {
       if (this.searchText !== "") {
@@ -2127,10 +2195,10 @@ export default {
       }
     },
     test_auto() {
-      this.title = "秋田県の二酸化炭素排出量";
-      this.firstData = "秋田県の人口データ";
+      this.title = "てすと３";
+      this.firstData = "ギリギリデータ";
       this.operator = "×";
-      this.secondData = "一人当たり二酸化炭素排出量";
+      this.secondData = "小数点データ";
       this.unit = "キログラム";
     },
     goDev() {
@@ -2154,6 +2222,7 @@ export default {
           this.guesser = "block";
           this.viewer = "none";
           this.isAlreadyGuess = false;
+          this.dataSet();
         }
       }
     },
@@ -2200,6 +2269,11 @@ export default {
 </script>
 
 <style scoped>
+/* コモン */
+.tint {
+  background: linear-gradient(to right, #ffffff, #99daff);
+}
+
 /* アップバー */
 .app-bar {
   height: 10vh;
@@ -2416,6 +2490,7 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  position: relative;
 }
 .main-title-box {
   display: flex;
@@ -2454,6 +2529,13 @@ export default {
   right: -4vw;
   top: -3vh;
 }
+.after-guess {
+  width: 60vw;
+}
+.after-guess::after {
+  display: none;
+}
+
 .main-input {
   display: block;
   font-weight: 700;
@@ -2466,6 +2548,16 @@ export default {
   background: linear-gradient(to right, #cccccc, #7aaecc);
   width: 100%;
   box-sizing: border-box;
+}
+.result-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to right, #ffffff, #99daff);
+}
+.main-input h2 {
+  font-size: 2vw;
+  display: block;
 }
 .main-content-box {
   height: 20vh;
@@ -2514,7 +2606,9 @@ export default {
   display: block;
   font-size: 1.2vw;
 }
-.data-number-button {
+.data-number-button,
+.digit-up-button,
+.digit-down-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2528,7 +2622,13 @@ export default {
   background: linear-gradient(to right, #ffff00, #99daff);
   box-sizing: border-box;
 }
-.data-number-button h4 {
+.digit-up-button,
+.digit-down-button {
+  width: 90px;
+}
+.data-number-button h4,
+.digit-up-button h4,
+.digit-down-button h4 {
   display: block;
   font-size: 10px;
 }
@@ -2542,19 +2642,58 @@ export default {
 .third-data input {
   margin-right: 0;
 }
+.result-data {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to right, #ffffff, #99daff);
+  width: max();
+}
+.result-data-unit {
+  margin-left: 1vw;
+  font-size: 1vw;
+}
+
 .equation-area {
   width: 50vw;
-  margin-right: 8vw;
+  height: 6vw;
+  margin-top: calc((25vh - 8.5vw) / 2);
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffffff, #99daff);
+  box-sizing: border-box;
 }
 .equation-area h2 {
-  font-size: 20px;
+  font-size: 1.6vw;
+  margin-left: 10px;
+  margin-bottom: 0.8vw;
   line-height: 2;
   text-align: left;
   display: block;
   box-sizing: border-box;
 }
+.guess-equation {
+  width: 50vw;
+  margin-right: 8vw;
+}
+.guess-equation::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 26vh;
+  background-color: #000;
+  position: absolute;
+  right: -4vw;
+  top: -3vh;
+}
 .guess-button-area {
   width: 14vw;
+  height: 20vh;
+  margin-bottom: 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .discription {
   display: block;
@@ -2562,6 +2701,25 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.guess-button,
+.next-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12vw;
+  height: 12vw;
+  max-width: 20vh;
+  max-height: 20vh;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.guess-button h3 {
+  display: block;
+  font-size: min(5vh, 3vw);
 }
 
 #result-area {
