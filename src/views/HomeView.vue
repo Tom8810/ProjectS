@@ -1,21 +1,41 @@
 <template>
   <div class="help-shadow"></div>
   <div class="app-bar">
-    <h1>アップバー</h1>
+    <div class="app-bar-leading">
+      <h1 class="app-bar-title">Guess.</h1>
+      <h1 class="app-bar-mode" v-if="isGuess === true">推測</h1>
+      <h1 class="app-bar-mode" v-else>閲覧</h1>
+      <h3>モード</h3>
+    </div>
     <button @click="goDev">dev</button>
-    <button v-if="isGuess && isAlreadyStarted" @click="change">
-      データベースへ
-    </button>
-    <button v-if="!isGuess && isAlreadyStarted" @click="change">推測へ</button>
-    <button @click="help" class="help-button">ヘルプ</button>
+    <button @click="test_auto">自動</button>
+    <div class="app-bar-end">
+      <h3 class="app-bar-mode-change button" v-if="isGuess" @click="change">
+        閲覧モードへ
+      </h3>
+      <h3 class="app-bar-mode-change button" v-else @click="change">
+        推測モードへ
+      </h3>
+      <h3 @click="help" class="app-bar-help button">Help</h3>
+    </div>
   </div>
   <div class="body">
     <aside class="side-bar">
-      <div class="favorite-post" id="favorite-post">
-        <h4>評価の高い推測</h4>
+      <div class="favorite-post">
+        <div class="sidebar-title-box">
+          <h4 class="sidebar-title-leading">人気の推測</h4>
+          <h4 class="sidebar-title-end">Hot</h4>
+        </div>
+        <div class="line-arrow-in-sidebar"></div>
+        <div id="favorite-post-container"></div>
       </div>
-      <div class="new-post" id="new-post">
-        <h4>新着の推測</h4>
+      <div class="new-post">
+        <div class="sidebar-title-box">
+          <h4 class="sidebar-title-leading">新着の推測</h4>
+          <h4 class="sidebar-title-end">Latest</h4>
+        </div>
+        <div class="line-arrow-in-sidebar"></div>
+        <div id="new-post-container"></div>
       </div>
       <div class="ad">
         <h4>その他</h4>
@@ -50,7 +70,188 @@
     </div>
     <!-- ここから推測 -->
     <div class="main" :style="{ display: guesser }">
-      <button @click="test_auto">自動</button>
+      <div class="main-row">
+        <div class="guess-title main-box">
+          <div class="main-title-box">
+            <h3 class="main-title-leading">推測テーマ</h3>
+            <h3>Theme</h3>
+          </div>
+          <div class="main-content-box" v-if="!isAlreadyGuess">
+            <input
+              type="text"
+              class="main-input"
+              id="main-input"
+              placeholder="テーマを入力"
+              v-model="title"
+              @change="changeDisc()"
+            />
+          </div>
+          <div class="main-content-box" v-else>
+            <div class="main-input result-title tint">
+              <h2>{{ title }}</h2>
+            </div>
+          </div>
+        </div>
+        <div class="guess-unit main-box" v-if="!isAlreadyGuess">
+          <div class="main-title-box">
+            <h3 class="main-title-leading">単位</h3>
+            <h3>Unit</h3>
+          </div>
+          <!-- ここは計算結果表示時はなし  -->
+          <div class="main-content-box">
+            <input
+              type="text"
+              class="main-input"
+              placeholder="単位を入力"
+              v-model="unit"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="main-row">
+        <div class="guess-data main-box">
+          <div class="main-title-box" v-if="!isAlreadyGuess">
+            <h3 class="main-title-leading">使用データ</h3>
+            <h3>Data</h3>
+            <div
+              class="data-number-button button"
+              id="data-number-button"
+              @click="
+                addData();
+                changeDisc();
+              "
+            >
+              <h4>データを増やす</h4>
+            </div>
+          </div>
+          <div class="main-title-box" v-else>
+            <h3 class="main-title-leading">計算結果</h3>
+            <h3>Result</h3>
+            <div class="digit-up-button button" @click="digitUp">
+              <h4>ざっくり表示</h4>
+            </div>
+            <div class="digit-down-button button" @click="digitDown">
+              <h4>きっちり表示</h4>
+            </div>
+          </div>
+          <div class="main-content-box guess-data-area" v-if="!isAlreadyGuess">
+            <div class="first-data">
+              <input
+                type="text"
+                autocomplete="on"
+                list="data1"
+                id="data-input-1"
+                v-model="firstData"
+                placeholder="データを選択"
+                @change="changeDisc()"
+              />
+              <datalist id="data1"> </datalist>
+              <div
+                class="numchange-button button"
+                id="num-change-button-forf"
+                @click="numChangeForF"
+              >
+                <h4 id="num-change-text-forf">数値を入力</h4>
+              </div>
+            </div>
+            <div class="first-ope">
+              <select
+                name="post-particle"
+                v-model="operator"
+                @change="changeDisc()"
+              >
+                <option value="+">+</option>
+                <option value="-">-</option>
+                <option value="×">×</option>
+                <option value="÷">÷</option>
+              </select>
+            </div>
+            <div class="second-data">
+              <input
+                type="text"
+                autocomplete="on"
+                list="data2"
+                id="data-input-2"
+                v-model="secondData"
+                placeholder="データを選択"
+                @change="changeDisc()"
+              />
+              <datalist id="data2"> </datalist>
+              <div
+                class="numchange-button button"
+                id="num-change-button-fors"
+                @click="numChangeForS"
+              >
+                <h4 id="num-change-text-fors">数値を入力</h4>
+              </div>
+            </div>
+            <div class="second-ope" v-if="howManyData === 3">
+              <select
+                name="post-particle"
+                v-model="operator2"
+                @change="changeDisc()"
+              >
+                <option value="+">+</option>
+                <option value="-">-</option>
+                <option value="×">×</option>
+                <option value="÷">÷</option>
+              </select>
+            </div>
+            <div class="third-data" v-if="howManyData === 3">
+              <input
+                type="text"
+                autocomplete="on"
+                list="data3"
+                id="data-input-3"
+                v-model="thirdData"
+                placeholder="データを選択"
+                @change="changeDisc()"
+                @mouseover.once="thirdStart"
+              />
+              <datalist id="data3"> </datalist>
+              <div
+                class="numchange-button button"
+                id="num-change-button-fort"
+                @click="numChangeForT"
+              >
+                <h4 id="num-change-text-fort">数値を入力</h4>
+              </div>
+            </div>
+          </div>
+          <div class="main-content-box" v-else>
+            <div class="main-input result-data tint">
+              <h2>
+                {{ roundedResult
+                }}<span class="result-data-unit">{{ unit }}</span>
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="main-row">
+        <div class="guess-equation main-box">
+          <div class="main-title-box">
+            <h3 class="main-title-leading">推測式</h3>
+            <h3>Equation</h3>
+          </div>
+          <div class="main-content-box equation-area">
+            <h2>
+              {{ title }} =
+              <span class="discription">{{ discription }}</span>
+            </h2>
+          </div>
+        </div>
+        <div class="guess-button-area">
+          <div class="guess-button button" @click="calc" v-if="!isAlreadyGuess">
+            <h3>推測</h3>
+          </div>
+          <div class="next-button button" @click="next" v-else>
+            <h3>次へ</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- ここから旧 -->
       <div id="guess-box">
         <div class="title-area">
           <h3>推測テーマ</h3>
@@ -75,7 +276,7 @@
           <div id="calc-data-area">
             <h3>使用データ</h3>
             <div class="help-box">
-              <button
+              <!-- <button
                 id="data-number-button"
                 @click="
                   addData();
@@ -83,7 +284,7 @@
                 "
               >
                 データの数を増やす
-              </button>
+              </button> -->
               <div class="help">
                 <p>
                   このボタンは推測に使うデータの数を3つにしたい場合に押します。
@@ -222,6 +423,9 @@
 
     <!-- ここからデータベース -->
     <div class="main" :style="{ display: viewer }">
+      <div class="main-first-row"></div>
+      <div class="main-second-row"></div>
+      <div class="main-third-row"></div>
       <div class="search" id="search">
         <h2>データベース</h2>
         <h3>検索</h3>
@@ -332,6 +536,7 @@ export default {
   data() {
     return {
       isGuess: true,
+      isAlreadyGuess: false,
       ishelp: false,
       helpIndex: 0,
       helpDeleteIndex: -1,
@@ -428,8 +633,7 @@ export default {
       ],
       alreadySearchStart: false,
       changeDisc: function () {
-        this.discription =
-          this.title + "=" + this.firstData + this.operator + this.secondData;
+        this.discription = this.firstData + this.operator + this.secondData;
         if (this.howManyData === 3) {
           this.discription = this.discription + this.operator2 + this.thirdData;
         }
@@ -469,16 +673,35 @@ export default {
             });
           }
           // favorite
-          const favoritePost = document.getElementById("favorite-post");
-          const favData = document.createElement("div");
+          const favoritePost = document.getElementById(
+            "favorite-post-container"
+          );
           const favQ = query(
             this.commonLef,
             orderBy("likedCount", "desc"),
-            limit(1)
+            limit(2)
           );
           const fav = await getDocs(favQ);
           fav.forEach(async (e) => {
-            favData.textContent = e.data().title;
+            const favData = document.createElement("div");
+            const favDataText = document.createElement("h4");
+            favData.classList.add("button");
+            favData.style.border = "solid 0.1vw #000000";
+            favData.style.padding = "0.7vw";
+            favData.style.width = "12vw";
+            favData.style.height = "5vw";
+            favData.style.maxHeight = "10vh";
+            favData.style.display = "flex";
+            favData.style.alignItems = "center";
+            favData.style.justifyContent = "center";
+            favDataText.style.fontSize = "1.5vw";
+            favDataText.style.lineHeight = "1.5";
+            if (e.data().title.toString().length >= 15) {
+              favDataText.textContent = this.omit(e.data().title, 14);
+            } else {
+              favDataText.textContent = e.data().title;
+            }
+            favData.append(favDataText);
             favData.onclick = async () => {
               this.isGuess = false;
               this.guesser = "none";
@@ -494,12 +717,28 @@ export default {
           });
 
           // new
-          const newPost = document.getElementById("new-post");
+          const newPost = document.getElementById("new-post-container");
           const newData = document.createElement("div");
+          const newDataText = document.createElement("h4");
+          newData.classList.add("button");
+          newData.style.border = "solid 0.1vw #000000";
+          newData.style.padding = "0.7vw";
+          newData.style.width = "12vw";
+          newData.style.height = "5vw";
+          newData.style.display = "flex";
+          newData.style.alignItems = "center";
+          newData.style.justifyContent = "center";
+          newDataText.style.fontSize = "1.5vw";
+          newDataText.style.lineHeight = "1.5";
           const newQ = query(this.commonLef, orderBy("date", "desc"), limit(1));
           const ne = await getDocs(newQ);
           ne.forEach(async (e) => {
-            newData.textContent = e.data().title;
+            if (e.data().title.toString().length >= 15) {
+              newDataText.textContent = this.omit(e.data().title, 14);
+            } else {
+              newDataText.textContent = e.data().title;
+            }
+            newData.append(newDataText);
             newData.onclick = async () => {
               this.isGuess = false;
               this.guesser = "none";
@@ -1384,6 +1623,25 @@ export default {
         card.style.zIndex = 2;
         changebox.style.zIndex = 2;
       },
+      omit: (e, num) => {
+        // eはカットする文字列、numはその字数以下にしたい文字数
+        let str = e.substr(0, num - 1);
+        return str + "...";
+      },
+      dataSet: () => {
+        const data1 = document.getElementById("data1");
+        const data2 = document.getElementById("data2");
+        if (data1.childElementCount === 0) {
+          this.data.forEach((e) => {
+            const optionFor1 = document.createElement("option");
+            const optionFor2 = document.createElement("option");
+            optionFor1.value = optionFor2.value = e.title;
+            optionFor1.textContent = optionFor2.textContent = `(${e.degree})`;
+            data1.append(optionFor1);
+            data2.append(optionFor2);
+          });
+        }
+      },
     };
   },
   methods: {
@@ -1393,10 +1651,12 @@ export default {
         this.thirdData = "";
         this.operator2 = "";
         this.howManyData = 3;
-        dataNumberButton.textContent = "データの数を減らす";
+        dataNumberButton.textContent = "データを減らす";
+        dataNumberButton.style.fontSize = "10px";
       } else {
         this.howManyData = 2;
-        dataNumberButton.textContent = "データの数を増やす";
+        dataNumberButton.textContent = "データを増やす";
+        dataNumberButton.style.fontSize = "10px";
       }
 
       //複数データ追加の場合↓
@@ -1474,7 +1734,7 @@ export default {
       this.data.forEach((e) => {
         const option = document.createElement("option");
         option.value = e.title;
-        option.textContent = e.title;
+        option.textContent = `(${e.degree})`;
         data3.append(option);
       });
       this.alreadyThirdStarted = true;
@@ -1482,16 +1742,15 @@ export default {
     numChangeForF() {
       this.firstData = "";
       const firstDataInput = document.getElementById("data-input-1");
-      const numChangeButtonForF = document.getElementById(
-        "num-change-button-forf"
-      );
+      const numChangeTextForF = document.getElementById("num-change-text-forf");
       if (firstDataInput.type === "text") {
         const datalist = document.getElementById("data1");
         while (datalist.lastChild) {
           datalist.lastChild.remove();
         }
         firstDataInput.type = "number";
-        numChangeButtonForF.textContent = "データを選択する";
+        numChangeTextForF.style.fontSize = "1.2vw";
+        numChangeTextForF.textContent = "データを選択する";
       } else {
         const datalist = document.getElementById("data1");
         this.data.forEach((e) => {
@@ -1501,22 +1760,22 @@ export default {
           datalist.append(optionFor1);
         });
         firstDataInput.type = "text";
-        numChangeButtonForF.textContent = "数値を入力する";
+        numChangeTextForF.style.fontSize = "1.2vw";
+        numChangeTextForF.textContent = "数値を入力する";
       }
     },
     numChangeForS() {
       this.secondData = "";
       const secondDataInput = document.getElementById("data-input-2");
-      const numChangeButtonForS = document.getElementById(
-        "num-change-button-fors"
-      );
+      const numChangeTextForS = document.getElementById("num-change-text-fors");
       if (secondDataInput.type === "text") {
         const datalist = document.getElementById("data2");
         while (datalist.lastChild) {
           datalist.lastChild.remove();
         }
         secondDataInput.type = "number";
-        numChangeButtonForS.textContent = "データを選択する";
+        numChangeTextForS.style.fontSize = "1.2vw";
+        numChangeTextForS.textContent = "データを選択する";
       } else {
         const datalist = document.getElementById("data2");
         this.data.forEach((e) => {
@@ -1526,22 +1785,22 @@ export default {
           datalist.append(optionFor2);
         });
         secondDataInput.type = "text";
-        numChangeButtonForS.textContent = "数値を入力する";
+        numChangeTextForS.style.fontSize = "1.2vw";
+        numChangeTextForS.textContent = "数値を入力する";
       }
     },
     numChangeForT() {
       this.thirdData = "";
       const thirdDataInput = document.getElementById("data-input-3");
-      const numChangeButtonForT = document.getElementById(
-        "num-change-button-fort"
-      );
+      const numChangeTextForT = document.getElementById("num-change-text-fort");
       if (thirdDataInput.type === "text") {
         const datalist = document.getElementById("data3");
         while (datalist.lastChild) {
           datalist.lastChild.remove();
         }
         thirdDataInput.type = "number";
-        numChangeButtonForT.textContent = "データを選択する";
+        numChangeTextForT.style.fontSize = "1.2vw";
+        numChangeTextForT.textContent = "データを選択する";
       } else {
         const datalist = document.getElementById("data3");
         this.data.forEach((e) => {
@@ -1551,7 +1810,8 @@ export default {
           datalist.append(optionFor3);
         });
         thirdDataInput.type = "text";
-        numChangeButtonForT.textContent = "数値を入力する";
+        numChangeTextForT.style.fontSize = "1.2vw";
+        numChangeTextForT.textContent = "数値を入力する";
       }
     },
     async calc() {
@@ -1744,19 +2004,50 @@ export default {
           resultJa.textContent = this.roundedResult + this.unit;
           resultNum.textContent = this.result;
           resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
-          this.dataPost();
+          const guessTitle = document.querySelector(".guess-title");
+          const guessData = document.querySelector(".guess-data");
+          guessTitle.classList.add("after-guess");
+          guessData.classList.add("after-guess");
+          if (this.title !== "てすと３") {
+            this.dataPost();
+          }
+          this.isAlreadyGuess = true;
         }
       }
     },
-    next() {
+    digitUp() {
+      if (this.roundDigit <= this.digit - 2) {
+        this.roundDigit = this.roundDigit + 1;
+        this.round();
+      } else {
+        alert("これ以上ざっくり度を上げられません。");
+      }
+    },
+    digitDown() {
+      if (
+        this.roundDigit >=
+        this.intResult.toString().length - this.result.toString().length
+      ) {
+        this.roundDigit = this.roundDigit - 1;
+        this.round();
+      } else {
+        alert("これ以上正確度を上げられません。");
+      }
+    },
+    async next() {
       const resultBox = document.getElementById("result-box");
       const resultArea = document.getElementById("result-area");
       const guessBox = document.getElementById("guess-box");
+      const guessTitle = document.querySelector(".guess-title");
+      const guessData = document.querySelector(".guess-data");
+      guessData.classList.remove("after-guess");
+      guessTitle.classList.remove("after-guess");
       resultArea.style.display = "none";
       guessBox.style.display = "block";
       while (resultBox.lastChild) {
         resultBox.removeChild(resultBox.lastChild);
       }
+      this.isAlreadyGuess = false;
       this.num1 = "";
       this.num2 = "";
       this.num3 = "";
@@ -1782,6 +2073,8 @@ export default {
       this.roundDigit = 0;
       this.digitUnitCoeff = 0;
       this.searchText = "";
+      await this.start();
+      this.dataSet();
     },
     async getData() {
       if (this.searchText !== "") {
@@ -1902,10 +2195,10 @@ export default {
       }
     },
     test_auto() {
-      this.title = "秋田県の二酸化炭素排出量";
-      this.firstData = "秋田県の人口データ";
+      this.title = "てすと３";
+      this.firstData = "ギリギリデータ";
       this.operator = "×";
-      this.secondData = "一人当たり二酸化炭素排出量";
+      this.secondData = "小数点データ";
       this.unit = "キログラム";
     },
     goDev() {
@@ -1923,10 +2216,13 @@ export default {
       } else {
         if (!this.isAlreadyStarted) {
           this.start();
+          this.isAlreadyGuess = false;
         } else {
           this.isGuess = !this.isGuess;
           this.guesser = "block";
           this.viewer = "none";
+          this.isAlreadyGuess = false;
+          this.dataSet();
         }
       }
     },
@@ -1973,16 +2269,84 @@ export default {
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;700&display=swap");
+/* コモン */
+.tint {
+  background: linear-gradient(to right, #ffffff, #99daff);
+}
 
 /* アップバー */
 .app-bar {
-  height: 15vh;
-  background-color: #aeaeae;
+  height: 10vh;
+  background: linear-gradient(to right, #cccccc, #7aaecc);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  box-shadow: 0 3px 6px #333;
 }
-.help-button {
+.app-bar-leading,
+.app-bar-end {
+  display: flex;
+}
+.app-bar-leading *,
+.app-bar-end * {
+  display: inline-block;
+}
+.app-bar-leading {
+  margin-left: 25px;
+}
+.app-bar-leading h1 {
+  font-size: 6vh;
+}
+.app-bar-title {
+  font-style: italic;
+  font-weight: 700;
+  position: relative;
+}
+.app-bar-title::after {
+  content: "";
+  display: block;
+  width: 0.4vh;
+  height: 7vh;
+  background-color: #000;
+  position: absolute;
+  right: -25px;
+  top: -0.5vh;
+}
+.app-bar-mode {
+  margin-left: 50px;
+}
+.app-bar-leading h3 {
+  font-size: 3vh;
+  margin-top: 3vh;
+  margin-left: 5px;
+}
+.app-bar-end {
+  margin-right: 25px;
+}
+.app-bar-mode-change {
+  font-size: 3vh;
+  margin-right: 40px;
+  position: relative;
+}
+.app-bar-mode-change::after {
+  content: "";
+  display: block;
+  width: 0.3vh;
+  height: 4vh;
+  background-color: #000;
+  position: absolute;
+  right: -20px;
+  top: -0.5vh;
+}
+.app-bar-mode-change::after:hover {
+  transform: scale(1);
+}
+.app-bar-help {
   position: relative;
   z-index: 2;
+  font-size: 3vh;
+  font-style: italic;
 }
 
 /* ボディ */
@@ -1996,6 +2360,7 @@ export default {
   top: 0;
   height: 100vh;
   width: 100vw;
+  min-height: 500px;
   z-index: 10;
   background-color: white;
 }
@@ -2041,6 +2406,7 @@ export default {
   bottom: 0px;
   font-style: italic;
   color: #000;
+  line-height: 1.1;
 }
 .lineArrow {
   position: fixed;
@@ -2097,9 +2463,263 @@ export default {
 
 /* メイン */
 .main {
-  background-color: #cecece;
-  height: 85vh;
+  background-color: #fff;
+  height: 90vh;
   width: 80vw;
+}
+.main-row {
+  position: relative;
+  display: flex;
+  padding-left: 4vw;
+  padding-right: 4vw;
+  height: 25vh;
+  margin-top: 5vh;
+}
+.main-row:first-child::after,
+.main-row:nth-child(2)::after {
+  content: "";
+  display: block;
+  width: 75vw;
+  height: 0.15vw;
+  background-color: #000;
+  position: absolute;
+  bottom: 0;
+  left: 2vw;
+}
+.main-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+.main-title-box {
+  display: flex;
+}
+.main-title-box * {
+  display: inline-block;
+  font-size: 2vw;
+  font-style: italic;
+}
+.main-title-leading {
+  margin-right: 3vw;
+  position: relative;
+}
+.main-title-leading::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 2.5vw;
+  background-color: #000;
+  position: absolute;
+  right: -1.5vw;
+  top: -0.25vw;
+}
+.guess-title {
+  margin-right: 8vw;
+  width: 32vw;
+  position: relative;
+}
+.guess-title::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 26vh;
+  background-color: #000;
+  position: absolute;
+  right: -4vw;
+  top: -3vh;
+}
+.after-guess {
+  width: 60vw;
+}
+.after-guess::after {
+  display: none;
+}
+
+.main-input {
+  display: block;
+  font-weight: 700;
+  font-size: 2vw;
+  height: 6vw;
+  padding: 1vw;
+  border-radius: 5px;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #cccccc, #7aaecc);
+  width: 100%;
+  box-sizing: border-box;
+}
+.result-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to right, #ffffff, #99daff);
+}
+.main-input h2 {
+  font-size: 2vw;
+  display: block;
+}
+.main-content-box {
+  height: 20vh;
+  display: flex;
+  align-items: center;
+}
+.guess-unit {
+  width: 32vw;
+}
+
+.guess-data-area div input,
+.guess-data-area div select {
+  display: block;
+  height: 3vw;
+  min-height: 15px;
+  font-weight: 700;
+  margin-right: 2vw;
+  border-radius: 5px;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #cccccc, #7aaecc);
+  width: 100%;
+  box-sizing: border-box;
+}
+.guess-data-area div input {
+  padding: 0.5vw;
+  width: 18vw;
+  font-size: 1.3vw;
+}
+.numchange-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14vw;
+  margin-left: 2vw;
+  margin-top: 2vh;
+  height: 3vw;
+  min-height: 15px;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.numchange-button h4 {
+  display: block;
+  font-size: 1.2vw;
+}
+.data-number-button,
+.digit-up-button,
+.digit-down-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  margin-left: 2vw;
+  height: 2vw;
+  min-height: 15px;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.digit-up-button,
+.digit-down-button {
+  width: 90px;
+}
+.data-number-button h4,
+.digit-up-button h4,
+.digit-down-button h4 {
+  display: block;
+  font-size: 10px;
+}
+.guess-data-area div select {
+  width: 5vw;
+  font-size: 1.5vw;
+}
+.guess-data-area {
+  display: flex;
+}
+.third-data input {
+  margin-right: 0;
+}
+.result-data {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to right, #ffffff, #99daff);
+  width: max();
+}
+.result-data-unit {
+  margin-left: 1vw;
+  font-size: 1vw;
+}
+
+.equation-area {
+  width: 50vw;
+  height: 6vw;
+  margin-top: calc((25vh - 8.5vw) / 2);
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffffff, #99daff);
+  box-sizing: border-box;
+}
+.equation-area h2 {
+  font-size: 1.6vw;
+  margin-left: 10px;
+  margin-bottom: 0.8vw;
+  line-height: 2;
+  text-align: left;
+  display: block;
+  box-sizing: border-box;
+}
+.guess-equation {
+  width: 50vw;
+  margin-right: 8vw;
+}
+.guess-equation::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 26vh;
+  background-color: #000;
+  position: absolute;
+  right: -4vw;
+  top: -3vh;
+}
+.guess-button-area {
+  width: 14vw;
+  height: 20vh;
+  margin-bottom: 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.discription {
+  display: block;
+  width: 50vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.guess-button,
+.next-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12vw;
+  height: 12vw;
+  max-width: 20vh;
+  max-height: 20vh;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.guess-button h3 {
+  display: block;
+  font-size: min(5vh, 3vw);
 }
 
 #result-area {
@@ -2137,20 +2757,89 @@ export default {
 
 /* サイド */
 .side-bar {
-  background-color: #bebebe;
-  height: 85vh;
+  background: linear-gradient(#ffffff, #99daff);
+  height: 90vh;
   width: 20vw;
+  min-height: 500px;
 }
+.sidebar-title-box {
+  margin-left: 2vw;
+  display: flex;
+  justify-content: flex-start;
+  position: relative;
+}
+.sidebar-title-box * {
+  display: inline-block;
+}
+.line-arrow-in-sidebar {
+  top: 0;
+  width: 17vw;
+  height: 0.5vw;
+  border-bottom: 0.1vw solid #000;
+  border-right: 0.2vw solid #000;
+  transform: skew(45deg);
+  margin-left: 1vw;
+}
+.sidebar-title-leading {
+  font-size: 1.5vw;
+  margin-right: 2vw;
+  position: relative;
+  font-weight: 600;
+}
+.sidebar-title-leading::after {
+  content: "";
+  display: block;
+  width: 0.1vw;
+  height: 1.9vw;
+  background-color: #000;
+  position: absolute;
+  right: -1vw;
+  top: -0.2vw;
+}
+.sidebar-title-end {
+  font-size: 1.5vw;
+  font-weight: 600;
+  font-style: italic;
+}
+#favorite-post-container,
+#new-post-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#favorite-post-container {
+  margin: 3vh 2.5vw;
+  height: 30vh;
+  justify-content: space-between;
+}
+#new-post-container {
+  margin: 3vh 2.5vw;
+  height: 15vh;
+  justify-content: center;
+}
+
 .favorite-post {
-  background-color: #bebeff;
   height: 40vh;
+  margin-top: 15px;
+  position: relative;
+}
+.favorite-post::after,
+.new-post::after {
+  content: "";
+  display: block;
+  width: 18vw;
+  height: 0.15vw;
+  background-color: #000;
+  position: absolute;
+  bottom: 0;
+  left: 0.8vw;
 }
 .ad {
-  background-color: #beffbe;
-  height: 15vh;
+  height: calc(20vh - 30px);
 }
 .new-post {
-  background-color: #ffbebe;
   height: 30vh;
+  margin-top: 15px;
+  position: relative;
 }
 </style>
