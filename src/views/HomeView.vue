@@ -250,266 +250,222 @@
           </div>
         </div>
       </div>
-
-      <!-- ここから旧 -->
-      <div id="guess-box">
-        <div class="title-area">
-          <h3>推測テーマ</h3>
-          <div class="help-box">
-            <input
-              type="text"
-              name="name"
-              id="name"
-              v-model="title"
-              @change="changeDisc()"
-            />
-            <div class="help">
-              <p>
-                ここは推測のタイトルを入力する場所です。これから推測することを入力しましょう。
-              </p>
-              <button @click="helpOpe">例を自動入力</button>
-              <button @click="nextHelp">次へ</button>
-            </div>
-          </div>
-        </div>
-        <div class="calc-area">
-          <div id="calc-data-area">
-            <h3>使用データ</h3>
-            <div class="help-box">
-              <!-- <button
-                id="data-number-button"
-                @click="
-                  addData();
-                  changeDisc();
-                "
-              >
-                データの数を増やす
-              </button> -->
-              <div class="help">
-                <p>
-                  このボタンは推測に使うデータの数を3つにしたい場合に押します。
-                </p>
-                <button @click="nextHelp">次へ</button>
-                <button @click="prevHelp">前へ戻る</button>
-              </div>
-            </div>
-            <div class="help-box">
-              <input
-                type="text"
-                autocomplete="on"
-                list="data1"
-                id="data-input-1"
-                v-model="firstData"
-                @change="changeDisc()"
-              />
-              <datalist id="data1"> </datalist>
-              <button id="num-change-button-forf" @click="numChangeForF">
-                数値を入力する
-              </button>
-              <div class="help">
-                <p>
-                  ここは推測に使う一つ目のデータを選択する場所です。キーワードを入力すると絞り込みができます。数値を入力したい場合は「数値を入力する」ボタンを押してください。
-                </p>
-                <button @click="helpOpe">例を自動入力</button>
-                <button @click="nextHelp">次へ</button>
-                <button @click="prevHelp">前へ戻る</button>
-              </div>
-            </div>
-            <div>
-              <div class="help-box">
-                <select
-                  name="post-particle"
-                  v-model="operator"
-                  @change="changeDisc()"
-                >
-                  <option value="+">+</option>
-                  <option value="-">-</option>
-                  <option value="×">×</option>
-                  <option value="÷">÷</option>
-                </select>
-                <div class="help">
-                  <p>ここは記号を選択する場所です。</p>
-                  <button @click="helpOpe">例を自動入力</button>
-                  <button @click="nextHelp">次へ</button>
-                  <button @click="prevHelp">前へ戻る</button>
-                </div>
-              </div>
-              <div class="help-box">
-                <input
-                  type="text"
-                  autocomplete="on"
-                  list="data2"
-                  id="data-input-2"
-                  v-model="secondData"
-                  @change="changeDisc()"
-                />
-                <datalist id="data2"> </datalist>
-                <button id="num-change-button-fors" @click="numChangeForS">
-                  数値を入力する
-                </button>
-                <div class="help">
-                  <p>
-                    ここは推測に使う二つ目のデータを選択する場所です。キーワードを入力すると絞り込みができます。数値を入力したい場合は「数値を入力する」ボタンを押してください。
-                  </p>
-                  <button @click="helpOpe">例を自動入力</button>
-                  <button @click="nextHelp">次へ</button>
-                  <button @click="prevHelp">前へ戻る</button>
-                </div>
-              </div>
-            </div>
-            <div v-if="howManyData === 3">
-              <select
-                name="post-particle"
-                v-model="operator2"
-                @change="changeDisc()"
-              >
-                <option value="+">+</option>
-                <option value="-">-</option>
-                <option value="×">×</option>
-                <option value="÷">÷</option>
-              </select>
-              <input
-                type="text"
-                autocomplete="on"
-                list="data3"
-                id="data-input-3"
-                v-model="thirdData"
-                @change="changeDisc()"
-                @mouseover.once="thirdStart"
-              />
-              <datalist id="data3"> </datalist>
-              <button id="num-change-button-fort" @click="numChangeForT">
-                数値を入力する
-              </button>
-            </div>
-          </div>
-          <div class="help-box">
-            <h4>単位</h4>
-            <input type="text" v-model="unit" />
-            <div class="help">
-              <p>こちらは推測するデータの単位を入力する場所です。</p>
-              <button @click="helpOpe">例を自動入力</button>
-              <button @click="nextHelp">次へ</button>
-              <button @click="prevHelp">前へ戻る</button>
-            </div>
-          </div>
-        </div>
-        <div class="discription-area help-box">
-          <h3>推測の根拠</h3>
-          <h3>{{ discription }}</h3>
-          <div class="help">
-            <p>こちらは推測する式が表示される場所です。</p>
-            <button @click="nextHelp">次へ</button>
-            <button @click="prevHelp">前へ戻る</button>
-          </div>
-        </div>
-        <div class="help-box">
-          <button @click="calc">計算</button>
-          <div class="help">
-            <p>空欄がないことを確認して、このボタンを押して推測しましょう。</p>
-            <button @click="help">終了</button>
-            <button @click="prevHelp">前へ戻る</button>
-          </div>
-        </div>
-      </div>
-      <div id="result-area">
-        <div class="result-box" id="result-box">
-          <h3>推測結果</h3>
-          <h3>{{ discription }}</h3>
-        </div>
-        <button @click="next">次へ</button>
-      </div>
     </div>
 
     <!-- ここからデータベース -->
     <div class="main" :style="{ display: viewer }">
-      <div class="main-first-row"></div>
-      <div class="main-second-row"></div>
-      <div class="main-third-row"></div>
-      <div class="search" id="search">
-        <h2>データベース</h2>
-        <h3>検索</h3>
-        <h3>検索方法</h3>
-        <div class="help-box">
-          <select v-model="searchStyle" @change="sortInit">
-            <option value="input" selected>直接入力検索</option>
-            <option value="sort">絞り込み検索</option>
-          </select>
-          <div class="help">
-            <p>
-              まずここで検索方法を指定します。直接入力して検索するか、条件を指定して絞り込み検索をします。
-            </p>
-            <button
-              @click="
-                helpOpe();
-                nextHelp();
-              "
+      <div class="main-row">
+        <div class="first-leading main-box">
+          <div class="main-title-box" v-if="!isAlreadyShow">
+            <h3 class="main-title-leading">検索方法</h3>
+            <h3>Search</h3>
+          </div>
+          <div class="main-title-box" v-else>
+            <h3 class="main-title-leading">タイトル</h3>
+            <h3>Title</h3>
+          </div>
+          <div class="main-content-box" v-if="!isAlreadyShow">
+            <select
+              class="main-input"
+              placeholder="検索方法を選択"
+              v-model="searchStyle"
+              @change="sortInit"
             >
-              次へ
-            </button>
+              <option value="input" selected>直接入力検索</option>
+              <option value="sort">絞り込み検索</option>
+            </select>
+          </div>
+          <div class="main-content-box" v-else>
+            <div class="main-input result-title tint">
+              <h2>{{ showingData.title }}</h2>
+            </div>
           </div>
         </div>
-        <div v-if="searchStyle === `sort`" class="help-box">
-          <select v-model="sortStyle" @change="sortInit">
-            <option value="genre">ジャンルで絞り込み</option>
-            <option value="keyword">キーワードで絞り込み</option>
-          </select>
-          <div v-if="sortStyle === `genre`">
-            <select v-model="sortGenre" @change="goGenreSort">
+        <div class="first-end main-box">
+          <div
+            class="main-title-box"
+            v-if="!isAlreadyShow && searchStyle === `sort`"
+          >
+            <h3 class="main-title-leading">絞り込み方法</h3>
+            <h3>Sort</h3>
+          </div>
+          <div class="main-title-box" v-if="isAlreadyShow">
+            <h3 class="main-title-leading">次数</h3>
+            <h3>Degree</h3>
+          </div>
+          <div
+            class="main-content-box"
+            v-if="!isAlreadyShow && searchStyle === `sort`"
+          >
+            <select
+              class="main-input"
+              placeholder="絞り込み方法を選択"
+              v-model="sortStyle"
+              @change="sortInit"
+            >
+              <option value="genre">ジャンルで絞り込み</option>
+              <option value="keyword">キーワードで絞り込み</option>
+            </select>
+          </div>
+          <div class="main-content-box" v-if="isAlreadyShow">
+            <div class="main-input result-title tint">
+              <h2>{{ showingData.degree }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-row">
+        <div class="second-leading main-box">
+          <div
+            class="main-title-box"
+            v-if="!isAlreadyShow && sortStyle === `genre`"
+          >
+            <h3 class="main-title-leading">ジャンル選択</h3>
+            <h3>Genre</h3>
+          </div>
+          <div
+            class="main-title-box"
+            v-if="!isAlreadyShow && sortStyle === `keyword`"
+          >
+            <h3 class="main-title-leading">キーワード入力</h3>
+            <h3>Keywords</h3>
+          </div>
+          <div class="main-title-box" v-if="isAlreadyShow">
+            <h3 class="main-title-leading">データ</h3>
+            <h3>Result</h3>
+            <div class="digit-up-button button" @click="digitUp">
+              <h4>ざっくり表示</h4>
+            </div>
+            <div class="digit-down-button button" @click="digitDown">
+              <h4>きっちり表示</h4>
+            </div>
+          </div>
+          <div
+            class="main-content-box"
+            v-if="!isAlreadyShow && sortStyle === `genre`"
+          >
+            <select
+              class="main-input genre-box"
+              placeholder="ジャンルを選択"
+              v-model="sortGenre"
+              @change="goGenreSort"
+            >
               <option value="pref">都道府県データ</option>
               <option value="population">人口データ</option>
               <option value="per">一人当たりデータ</option>
             </select>
           </div>
-          <div v-else>
-            <input type="text" v-model="sortKeyword" />
-            <button @click="goKeywordSort">絞り込み条件を追加</button>
+          <div
+            class="main-content-box"
+            v-if="!isAlreadyShow && sortStyle === `keyword`"
+          >
+            <input
+              type="text"
+              class="main-input keyword-box"
+              placeholder="キーワード"
+              v-model="sortKeyword"
+            />
+            <div class="keyword-add-button button" @click="goKeywordSort">
+              <h4>追加</h4>
+            </div>
+            <div id="sort-box"></div>
           </div>
-        </div>
-        <div class="sort-box" id="sort-box"></div>
-        <div class="help-box">
-          <input
-            type="text"
-            v-model="searchText"
-            autocomplete="on"
-            list="search-result-box"
-          />
-          <datalist id="search-result-box"></datalist>
-          <button @click="textDelete">削除</button>
-          <button @click="getData">表示</button>
-          <div class="help">
-            <p>
-              検索方法の指定や絞り込みが終わったら、ここから見たいデータを選択して表示ボタンを押します。
-            </p>
-            <button @click="prevHelp">前へ戻る</button>
-            <button @click="help()">終了</button>
+          <div class="main-content-box" v-if="isAlreadyShow">
+            <div class="main-input result-data tint">
+              <h2>
+                {{ roundedResult
+                }}<span class="result-data-unit">{{ showingData.unit }}</span>
+              </h2>
+            </div>
+            <div
+              class="review-button-area"
+              id="review-button-area"
+              v-if="showingData.degree > 1"
+            >
+              <div class="good-button button" @click="good">
+                <h3>合ってそう</h3>
+              </div>
+              <div class="bad-button button" @click="bad">
+                <h3>間違ってそう</h3>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="data-area" id="data-area">
-        <div>
-          <h2>タイトル</h2>
-          <h3 class="data-title" id="data-title">a</h3>
+      <div class="main-row">
+        <div class="guess-equation main-box">
+          <div class="main-title-box" v-if="!isAlreadyShow">
+            <h3 class="main-title-leading">データ選択</h3>
+            <h3>Select</h3>
+          </div>
+          <div
+            class="main-title-box"
+            v-if="isAlreadyShow && showingData.degree === 1"
+          >
+            <h3 class="main-title-leading">出典</h3>
+            <h3>Source</h3>
+          </div>
+          <div
+            class="main-title-box"
+            v-if="isAlreadyShow && showingData.degree > 1"
+          >
+            <h3 class="main-title-leading">親データ</h3>
+            <h3>Parents</h3>
+          </div>
+          <div class="main-content-box data-select-area" v-if="!isAlreadyShow">
+            <input
+              type="text"
+              class="main-input"
+              v-model="searchText"
+              autocomplete="on"
+              list="search-result-box"
+            />
+            <datalist id="search-result-box"></datalist>
+          </div>
+          <div
+            class="main-content-box source-area"
+            v-if="isAlreadyShow && showingData.degree === 1"
+          >
+            <div class="link-button button" @click="goLink">
+              <h3>出典先ページへ</h3>
+            </div>
+            <div class="copy-button button" @click="goCopy">
+              <h3>出典先リンクをコピー</h3>
+            </div>
+          </div>
+          <div
+            class="main-content-box parent-data-area"
+            v-if="isAlreadyShow && showingData.degree > 1"
+          >
+            <h2>
+              {{ showingData.title }} =
+              <span class="discription"
+                ><span class="parent-data1 parent" @click="showParent1"></span
+                >{{ showingData.parent.operator
+                }}<span class="parent-data2 parent" @click="showParent2"></span
+                ><span v-if="showingData.parent.parent3 !== undefined"
+                  >{{ showingData.parent.operator2
+                  }}<span
+                    class="parent-data3 parent"
+                    @click="showParent3"
+                  ></span></span
+              ></span>
+            </h2>
+          </div>
         </div>
-        <div>
-          <h2>データ</h2>
-          <h4 class="data-num" id="data-num">0</h4>
-          <div id="data-box"></div>
+        <div class="guess-button-area">
+          <div
+            class="guess-button button"
+            @click="getData"
+            v-if="!isAlreadyShow"
+          >
+            <h3>表示</h3>
+          </div>
+          <div class="next-button button" @click="searchStart" v-else>
+            <h3>次へ</h3>
+          </div>
         </div>
-        <div>
-          <h2>データの次数</h2>
-          <h3 class="data-degree" id="data-degree">0</h3>
-        </div>
-        <div id="for-primary"></div>
-        <div id="judge-area">
-          <h2>この推測を評価する</h2>
-          <div id="judge"></div>
-        </div>
-        <div>
-          <h2>親データ</h2>
-          <div id="parent-data-box"></div>
-        </div>
-        <button @click="searchStart">戻る</button>
       </div>
     </div>
   </div>
@@ -537,6 +493,7 @@ export default {
     return {
       isGuess: true,
       isAlreadyGuess: false,
+      isAlreadyShow: false,
       ishelp: false,
       helpIndex: 0,
       helpDeleteIndex: -1,
@@ -576,7 +533,7 @@ export default {
       roundDigit: 0,
       digitUnitCoeff: 0,
       searchStyle: "input",
-      sortStyle: "genre",
+      sortStyle: "",
       sortGenre: "",
       sortKeyword: "",
       sortCondition: [],
@@ -706,12 +663,8 @@ export default {
               this.isGuess = false;
               this.guesser = "none";
               this.viewer = "block";
-              const showingFavorite = await getDoc(
-                doc(db, "data", `${e.data().title}`)
-              );
-              this.showingData = showingFavorite.data();
-              await this.start();
-              this.showData();
+              this.searchText = e.data().title;
+              this.getData();
             };
             favoritePost.append(favData);
           });
@@ -743,12 +696,8 @@ export default {
               this.isGuess = false;
               this.guesser = "none";
               this.viewer = "block";
-              const showingNew = await getDoc(
-                doc(db, "data", `${e.data().title}`)
-              );
-              this.showingData = showingNew.data();
-              await this.start();
-              this.showData();
+              this.searchText = e.data().title;
+              this.getData();
             };
             newPost.append(newData);
           });
@@ -793,7 +742,7 @@ export default {
         if (this.howManyData === 3) {
           let max1 = this.calcParent1.degree;
           let max2 = this.calcParent2.degree;
-          let max3 = this.calcParent2.degree;
+          let max3 = this.calcParent3.degree;
           let parentData1 = this.calcParent1.title;
           let parentparent1 = this.calcParent1.parent;
           let parentData2 = this.calcParent2.title;
@@ -1371,31 +1320,6 @@ export default {
         this.appendData = [];
       },
       showData: function () {
-        const search = document.getElementById("search");
-        const dataArea = document.getElementById("data-area");
-        search.style.display = "none";
-        dataArea.style.display = "block";
-        const judge = document.getElementById("judge");
-        const parentDataBox = document.getElementById("parent-data-box");
-        const dataTitle = document.getElementById("data-title");
-        const dataNum = document.getElementById("data-num");
-        const dataDegree = document.getElementById("data-degree");
-        const forPrimary = document.getElementById("for-primary");
-        const dataBox = document.getElementById("data-box");
-        while (parentDataBox.lastChild) {
-          parentDataBox.lastChild.remove();
-        }
-        judge.style.display = "block";
-        while (judge.lastChild) {
-          judge.lastChild.remove();
-        }
-        while (forPrimary.lastChild) {
-          forPrimary.lastChild.remove();
-        }
-        while (dataBox.lastChild) {
-          dataBox.lastChild.remove();
-        }
-        const resultJa = document.createElement("h1");
         this.result = this.showingData.latest;
         this.intResult = Math.round(this.showingData.latest);
         this.digit = this.intResult.toString().length;
@@ -1408,182 +1332,12 @@ export default {
         } else {
           this.roundDigit = this.digit - 3;
         }
-
         this.round();
-        const digitUpButton = document.createElement("button");
-        digitUpButton.textContent = "ざっくり度アップ";
-        const digitDownButton = document.createElement("button");
-        digitDownButton.textContent = "正確度アップ";
-        digitUpButton.onclick = () => {
-          if (this.roundDigit <= this.digit - 2) {
-            this.roundDigit = this.roundDigit + 1;
-            this.round();
-            resultJa.textContent = this.roundedResult + this.showingData.unit;
-          } else {
-            alert("これ以上ざっくり度を上げられません。");
-          }
-        };
-        digitDownButton.onclick = () => {
-          if (this.result >= 1000) {
-            if (this.roundDigit >= 1) {
-              this.roundDigit = this.roundDigit - 1;
-              this.round();
-              resultJa.textContent = this.roundedResult + this.showingData.unit;
-            } else {
-              alert("これ以上正確度を上げられません。");
-            }
-          } else {
-            if (
-              this.roundDigit >
-              this.intResult.toString().length -
-                this.result.toString().length +
-                1
-            ) {
-              this.roundDigit = this.roundDigit - 1;
-              this.round();
-              resultJa.textContent = this.roundedResult + this.showingData.unit;
-            } else {
-              alert("これ以上正確度を上げられません。");
-            }
-          }
-        };
-        resultJa.textContent = this.roundedResult + this.showingData.unit;
-        dataTitle.textContent = this.showingData.title;
-        dataNum.textContent = this.showingData.latest;
-        dataDegree.textContent = this.showingData.degree;
-
-        if (
-          (this.result < 100 &&
-            this.result.toString().split(".")[1].length === 1) ||
-          (this.result < 10 && this.result.toString().split(".")[1].length < 3)
-        ) {
-          dataBox.append(resultJa);
-        } else {
-          dataBox.append(resultJa, digitUpButton, digitDownButton);
-        }
-        if (this.showingData.degree > 1) {
-          const goodButton = document.createElement("div");
-          goodButton.textContent = "正しいと思う";
-          const badButton = document.createElement("div");
-          badButton.textContent = "正しくないと思う";
-          goodButton.onclick = async () => {
-            judge.style.display = "none";
-            const ref = doc(db, "data", `${this.showingData.title}`);
-            await updateDoc(ref, {
-              likedCount: increment(1),
-            });
-          };
-          badButton.onclick = async () => {
-            judge.style.display = "none";
-            const ref = doc(db, "data", `${this.showingData.title}`);
-            await updateDoc(ref, {
-              likedCount: increment(-1),
-            });
-          };
-          judge.append(goodButton, badButton);
-        }
-        if (this.showingData.degree === 1) {
-          const title = document.createElement("h2");
-          title.textContent = "データの年次：" + this.showingData.year + "年";
-          const refLink = document.createElement("a");
-          refLink.innerText = "出典はこちら";
-          refLink.href = `${this.showingData.ref}`;
-          refLink.target = "_blank";
-          const copyButton = document.createElement("button");
-          copyButton.textContent = "出典先のリンクをコピー";
-          copyButton.onclick = () => {
-            if (!navigator.clipboard) {
-              alert("申し訳ありませんがこのブラウザでは対応していません");
-            } else {
-              navigator.clipboard.writeText(this.showingData.ref).then(
-                () => {
-                  alert("出典先のリンクをコピーしました。");
-                },
-                () => {
-                  alert("コピーに失敗しました。");
-                }
-              );
-            }
-          };
-          forPrimary.append(title, refLink, copyButton);
-        }
-        if ("parent1" in this.showingData.parent) {
-          if ("parent3" in this.showingData.parent) {
-            let parent1Title = this.showingData.parent.parent1.data;
-            let parent2Title = this.showingData.parent.parent2.data;
-            let parent3Title = this.showingData.parent.parent3.data;
-            let parentOpe = this.showingData.parent.operator;
-            let parentOpe2 = this.showingData.parent.operator2;
-            const parentData1 = document.createElement("h3");
-            const parentOperator = document.createElement("h3");
-            const parentData2 = document.createElement("h3");
-            const parentOperator2 = document.createElement("h3");
-            const parentData3 = document.createElement("h3");
-            parentData1.textContent = parent1Title;
-            parentOperator.textContent = parentOpe;
-            parentData2.textContent = parent2Title;
-            parentOperator2.textContent = parentOpe2;
-            parentData3.textContent = parent3Title;
-            parentData1.onclick = async () => {
-              const snapshot = await getDoc(doc(db, "data", `${parent1Title}`));
-              this.showingData = snapshot.data();
-              this.showData();
-            };
-            parentData2.onclick = async () => {
-              const snapshot = await getDoc(doc(db, "data", `${parent2Title}`));
-              this.showingData = snapshot.data();
-              this.showData();
-            };
-            parentData3.onclick = async () => {
-              const snapshot = await getDoc(doc(db, "data", `${parent3Title}`));
-              this.showingData = snapshot.data();
-              this.showData();
-            };
-            parentDataBox.append(
-              parentData1,
-              parentOperator,
-              parentData2,
-              parentOperator2,
-              parentData3
-            );
-          } else {
-            let parent1Title = this.showingData.parent.parent1.data;
-            let parent2Title = this.showingData.parent.parent2.data;
-            let parentOpe = this.showingData.parent.operator;
-            const parentData1 = document.createElement("h3");
-            const parentOperator = document.createElement("h3");
-            const parentData2 = document.createElement("h3");
-            parentData1.textContent = parent1Title;
-            parentOperator.textContent = parentOpe;
-            parentData2.textContent = parent2Title;
-            parentData1.onclick = async () => {
-              const snapshot = await getDoc(doc(db, "data", `${parent1Title}`));
-              this.showingData = snapshot.data();
-              this.showData();
-            };
-            parentData2.onclick = async () => {
-              const snapshot = await getDoc(doc(db, "data", `${parent2Title}`));
-              this.showingData = snapshot.data();
-              this.showData();
-            };
-            parentDataBox.append(parentData1, parentOperator, parentData2);
-          }
-        }
       },
-      searchStart: function () {
-        const search = document.getElementById("search");
-        const dataArea = document.getElementById("data-area");
-        search.style.display = "block";
-        dataArea.style.display = "none";
-        if (!this.alreadySearchStart) {
-          const searchResultBox = document.getElementById("search-result-box");
-          this.data.forEach((e) => {
-            const resultCard = document.createElement("option");
-            resultCard.textContent = `(${e.degree})`;
-            resultCard.value = e.title;
-            searchResultBox.append(resultCard);
-          });
-        }
+      searchStart: async function () {
+        this.isAlreadyShow = false;
+        await this.start();
+        this.dataSet();
       }.bind(this),
       moveToDB: async function () {
         this.isGuess = false;
@@ -1604,6 +1358,28 @@ export default {
           resultCard.value = e.title;
           searchResultBox.append(resultCard);
         });
+      },
+      getData: async () => {
+        if (this.searchText !== "") {
+          const snapshot = await getDoc(doc(db, "data", `${this.searchText}`));
+          this.showingData = snapshot.data();
+          this.searchText = "";
+          this.showData();
+          this.isAlreadyShow = true;
+          await this.start();
+          if (this.showingData.degree > 1) {
+            const parent1 = document.querySelector(".parent-data1");
+            const parent2 = document.querySelector(".parent-data2");
+            parent1.textContent = this.showingData.parent.parent1.data;
+            parent2.textContent = this.showingData.parent.parent2.data;
+            if (this.showingData.parent.parent3 !== undefined) {
+              const parent3 = document.querySelector(".parent-data3");
+              parent3.textContent = this.showingData.parent.parent3.data;
+            }
+          }
+        } else {
+          alert("データを選択してください");
+        }
       },
       goHelp: () => {
         const helpBoxes = document.querySelectorAll(".help-box");
@@ -1629,16 +1405,26 @@ export default {
         return str + "...";
       },
       dataSet: () => {
-        const data1 = document.getElementById("data1");
-        const data2 = document.getElementById("data2");
-        if (data1.childElementCount === 0) {
+        if (this.isGuess) {
+          const data1 = document.getElementById("data1");
+          const data2 = document.getElementById("data2");
+          if (data1.childElementCount === 0) {
+            this.data.forEach((e) => {
+              const optionFor1 = document.createElement("option");
+              const optionFor2 = document.createElement("option");
+              optionFor1.value = optionFor2.value = e.title;
+              optionFor1.textContent = optionFor2.textContent = `(${e.degree})`;
+              data1.append(optionFor1);
+              data2.append(optionFor2);
+            });
+          }
+        } else {
+          const searchResultBox = document.getElementById("search-result-box");
           this.data.forEach((e) => {
-            const optionFor1 = document.createElement("option");
-            const optionFor2 = document.createElement("option");
-            optionFor1.value = optionFor2.value = e.title;
-            optionFor1.textContent = optionFor2.textContent = `(${e.degree})`;
-            data1.append(optionFor1);
-            data2.append(optionFor2);
+            const resultCard = document.createElement("option");
+            resultCard.textContent = `(${e.degree})`;
+            resultCard.value = e.title;
+            searchResultBox.append(resultCard);
           });
         }
       },
@@ -1969,41 +1755,6 @@ export default {
           }
 
           this.round();
-          const resultBox = document.getElementById("result-box");
-          const resultArea = document.getElementById("result-area");
-          const guessBox = document.getElementById("guess-box");
-          resultArea.style.display = "block";
-          guessBox.style.display = "none";
-          const resultJa = document.createElement("h1");
-          const resultNum = document.createElement("h5");
-          const digitUpButton = document.createElement("button");
-          digitUpButton.textContent = "ざっくり度アップ";
-          const digitDownButton = document.createElement("button");
-          digitDownButton.textContent = "正確度アップ";
-          digitUpButton.onclick = () => {
-            if (this.roundDigit <= this.digit - 2) {
-              this.roundDigit = this.roundDigit + 1;
-              this.round();
-              resultJa.textContent = this.roundedResult + this.unit;
-            } else {
-              alert("これ以上ざっくり度を上げられません。");
-            }
-          };
-          digitDownButton.onclick = () => {
-            if (
-              this.roundDigit >=
-              this.intResult.toString().length - this.result.toString().length
-            ) {
-              this.roundDigit = this.roundDigit - 1;
-              this.round();
-              resultJa.textContent = this.roundedResult + this.unit;
-            } else {
-              alert("これ以上正確度を上げられません。");
-            }
-          };
-          resultJa.textContent = this.roundedResult + this.unit;
-          resultNum.textContent = this.result;
-          resultBox.append(resultJa, resultNum, digitUpButton, digitDownButton);
           const guessTitle = document.querySelector(".guess-title");
           const guessData = document.querySelector(".guess-data");
           guessTitle.classList.add("after-guess");
@@ -2035,18 +1786,10 @@ export default {
       }
     },
     async next() {
-      const resultBox = document.getElementById("result-box");
-      const resultArea = document.getElementById("result-area");
-      const guessBox = document.getElementById("guess-box");
       const guessTitle = document.querySelector(".guess-title");
       const guessData = document.querySelector(".guess-data");
       guessData.classList.remove("after-guess");
       guessTitle.classList.remove("after-guess");
-      resultArea.style.display = "none";
-      guessBox.style.display = "block";
-      while (resultBox.lastChild) {
-        resultBox.removeChild(resultBox.lastChild);
-      }
       this.isAlreadyGuess = false;
       this.num1 = "";
       this.num2 = "";
@@ -2076,16 +1819,6 @@ export default {
       await this.start();
       this.dataSet();
     },
-    async getData() {
-      if (this.searchText !== "") {
-        const snapshot = await getDoc(doc(db, "data", `${this.searchText}`));
-        this.showingData = snapshot.data();
-        this.searchText = "";
-        this.showData();
-      } else {
-        alert("データを選択してください");
-      }
-    },
     textDelete() {
       this.searchText = "";
     },
@@ -2100,10 +1833,25 @@ export default {
       });
       this.goSort();
       const container = document.createElement("div");
-      const sortName = document.createElement("h3");
-      const sortDeleteButton = document.createElement("button");
+      container.setAttribute(
+        "style",
+        "display: flex;flex-direction: column;justify-content: center;align-items: center;width: 12vw;margin-left: 2vw;"
+      );
+      const sortNameBox = document.createElement("div");
+      const sortName = document.createElement("h2");
+      sortNameBox.setAttribute(
+        "style",
+        "display: flex;justify-content: center;align-items: center;font-weight: 700;font-size: 2vw;height: 6vw;max-height: 8vh;padding: 1vw;border-radius: 5px;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #cccccc, #7aaecc);width: 100%;box-sizing: border-box;"
+      );
+      sortName.setAttribute("style", "font-size: 2vw;display: block;");
+      const sortDeleteButton = document.createElement("div");
+      const sortDeleteButtonText = document.createElement("h4");
       sortName.textContent = this.sortKeyword;
-      sortDeleteButton.textContent = "絞り込みを解除";
+      sortDeleteButtonText.textContent = "削除";
+      sortDeleteButtonText.setAttribute(
+        "style",
+        "display: block;font-size: 1.2vw;"
+      );
       sortDeleteButton.onclick = () => {
         let deleteEle = sortName.textContent;
         this.sortCondition = this.sortCondition.filter((e) => {
@@ -2120,8 +1868,15 @@ export default {
           container.lastChild.remove();
         }
       };
+      sortDeleteButton.setAttribute(
+        "style",
+        "display: flex;align-items: center;justify-content: center;width: 6vw;margin-top: 2vh;height: 3vw;min-height: 15px;font-weight: 700;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #ffff00, #99daff);box-sizing: border-box;"
+      );
+      sortDeleteButton.setAttribute("class", "button");
       this.sortKeyword = "";
-      container.append(sortName, sortDeleteButton);
+      sortNameBox.append(sortName);
+      sortDeleteButton.append(sortDeleteButtonText);
+      container.append(sortNameBox, sortDeleteButton);
       sortBox.appendChild(container);
     },
     goGenreSort() {
@@ -2157,11 +1912,7 @@ export default {
       }
     },
     sortInit() {
-      const sortBox = document.getElementById("sort-box");
       const searchResultBox = document.getElementById("search-result-box");
-      while (sortBox.lastChild) {
-        sortBox.lastChild.remove();
-      }
       while (searchResultBox.lastChild) {
         searchResultBox.lastChild.remove();
       }
@@ -2172,6 +1923,70 @@ export default {
         resultCard.value = e.title;
         searchResultBox.append(resultCard);
       });
+    },
+    async good() {
+      const reviewButtonArea = document.getElementById("review-button-area");
+      while (reviewButtonArea.lastChild) {
+        reviewButtonArea.lastChild.remove();
+      }
+      const ref = doc(db, "data", `${this.showingData.title}`);
+      await updateDoc(ref, {
+        likedCount: increment(1),
+      });
+    },
+    async bad() {
+      const reviewButtonArea = document.getElementById("review-button-area");
+      while (reviewButtonArea.lastChild) {
+        reviewButtonArea.lastChild.remove();
+      }
+      const ref = doc(db, "data", `${this.showingData.title}`);
+      await updateDoc(ref, {
+        likedCount: increment(-1),
+      });
+    },
+    goLink() {
+      window.open(this.showingData.ref, "_blank");
+    },
+    goCopy() {
+      if (!navigator.clipboard) {
+        alert("申し訳ありませんがこのブラウザでは対応していません");
+      } else {
+        navigator.clipboard.writeText(this.showingData.ref).then(
+          () => {
+            alert("出典先のリンクをコピーしました。");
+          },
+          () => {
+            alert("コピーに失敗しました。");
+          }
+        );
+      }
+    },
+    showParent1() {
+      let bool = this.data.some((e) => {
+        return e.title === this.showingData.parent.parent1.data;
+      });
+      if (bool) {
+        this.searchText = this.showingData.parent.parent1.data;
+        this.getData();
+      }
+    },
+    showParent2() {
+      let bool = this.data.some((e) => {
+        return e.title === this.showingData.parent.parent2.data;
+      });
+      if (bool) {
+        this.searchText = this.showingData.parent.parent2.data;
+        this.getData();
+      }
+    },
+    showParent3() {
+      let bool = this.data.some((e) => {
+        return e.title === this.showingData.parent.parent3.data;
+      });
+      if (bool) {
+        this.searchText = this.showingData.parent.parent3.data;
+        this.getData();
+      }
     },
     helpOpe() {
       if (this.isGuess) {
@@ -2268,7 +2083,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 /* コモン */
 .tint {
   background: linear-gradient(to right, #ffffff, #99daff);
@@ -2514,12 +2329,14 @@ export default {
   right: -1.5vw;
   top: -0.25vw;
 }
-.guess-title {
+.guess-title,
+.first-leading {
   margin-right: 8vw;
   width: 32vw;
   position: relative;
 }
-.guess-title::after {
+.guess-title::after,
+.first-leading::after {
   content: "";
   display: block;
   width: 0.15vw;
@@ -2530,7 +2347,7 @@ export default {
   top: -3vh;
 }
 .after-guess {
-  width: 60vw;
+  width: 50vw;
 }
 .after-guess::after {
   display: none;
@@ -2564,7 +2381,8 @@ export default {
   display: flex;
   align-items: center;
 }
-.guess-unit {
+.guess-unit,
+.first-end {
   width: 32vw;
 }
 
@@ -2648,7 +2466,7 @@ export default {
   justify-content: center;
   align-items: center;
   background: linear-gradient(to right, #ffffff, #99daff);
-  width: max();
+  width: 50vw;
 }
 .result-data-unit {
   margin-left: 1vw;
@@ -2697,7 +2515,7 @@ export default {
 }
 .discription {
   display: block;
-  width: 50vw;
+  width: calc(50vw - 20px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2717,9 +2535,122 @@ export default {
   background: linear-gradient(to right, #ffff00, #99daff);
   box-sizing: border-box;
 }
-.guess-button h3 {
+.guess-button h3,
+.next-button h3 {
   display: block;
   font-size: min(5vh, 3vw);
+}
+
+.second-leading {
+  width: 72vw;
+}
+.genre-box {
+  width: 32vw;
+}
+.keyword-box {
+  width: 20vw;
+}
+.keyword-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6vw;
+  margin-left: 2vw;
+  margin-top: 2vh;
+  height: 3vw;
+  min-height: 15px;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.keyword-add-button h4 {
+  display: block;
+  font-size: 1.2vw;
+}
+#sort-box {
+  width: 42vw;
+  height: 100%;
+  margin-left: 2vw;
+  display: flex;
+}
+.review-button-area {
+  width: 20vw;
+  margin-left: 2vw;
+}
+.good-button,
+.bad-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14vw;
+  margin-left: 3vw;
+  margin-bottom: 2vh;
+  height: 3vw;
+  min-height: 20px;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.good-button h3,
+.bad-button h3 {
+  display: block;
+  font-size: 1.5vw;
+}
+
+.source-area {
+  display: flex;
+  justify-content: space-evenly;
+}
+.link-button,
+.copy-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20vw;
+  margin-left: 3vw;
+  margin-bottom: 2vh;
+  height: 3vw;
+  min-height: 20px;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+.link-button h3 {
+  display: block;
+  font-size: 1.5vw;
+}
+.copy-button h3 {
+  display: block;
+  font-size: 1.5vw;
+}
+.parent-data-area {
+  width: 50vw;
+  height: 6vw;
+  margin-top: calc((25vh - 8.5vw) / 2);
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffffff, #99daff);
+  box-sizing: border-box;
+}
+.parent-data-area h2 {
+  font-size: 1.6vw;
+  margin-left: 10px;
+  margin-bottom: 0.8vw;
+  line-height: 2;
+  text-align: left;
+  display: block;
+  box-sizing: border-box;
+}
+.parent {
+  text-decoration: underline;
+  color: #00a3ff;
+  cursor: pointer;
 }
 
 #result-area {
