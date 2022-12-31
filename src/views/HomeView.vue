@@ -1,4 +1,8 @@
 <template>
+  <div class="dev">
+    <button @click="goDev">dev</button>
+    <button @click="test_auto">自動</button>
+  </div>
   <div class="help-shadow"></div>
   <div class="app-bar">
     <div class="app-bar-leading">
@@ -7,13 +11,11 @@
       <h1 class="app-bar-mode" v-else>閲覧</h1>
       <h3>モード</h3>
     </div>
-    <button @click="goDev">dev</button>
-    <button @click="test_auto">自動</button>
     <div class="app-bar-end">
-      <h3 class="app-bar-mode-change button" v-if="isGuess" @click="change">
+      <h3 class="app-bar-mode-change button" v-if="isGuess" @click="changeMode">
         閲覧モードへ
       </h3>
-      <h3 class="app-bar-mode-change button" v-else @click="change">
+      <h3 class="app-bar-mode-change button" v-else @click="changeMode">
         推測モードへ
       </h3>
       <h3 @click="help" class="app-bar-help button">Help</h3>
@@ -31,7 +33,7 @@
       </div>
       <div class="new-post">
         <div class="sidebar-title-box">
-          <h4 class="sidebar-title-leading">新着の推測</h4>
+          <h4 class="sidebar-title-leading">新着</h4>
           <h4 class="sidebar-title-end">Latest</h4>
         </div>
         <div class="line-arrow-in-sidebar"></div>
@@ -60,7 +62,7 @@
             <div class="line-arrow-in-box"></div>
             <h3>Guess Data</h3>
           </div>
-          <div class="start-button-box button" @click="moveToDB">
+          <div class="start-button-box button" @click.once="changeMode">
             <h1>閲覧する</h1>
             <div class="line-arrow-in-box"></div>
             <h3>View Data</h3>
@@ -71,7 +73,7 @@
     <!-- ここから推測 -->
     <div class="main" :style="{ display: guesser }">
       <div class="main-row">
-        <div class="guess-title main-box">
+        <div class="first-leading _guess-title_ main-box">
           <div class="main-title-box">
             <h3 class="main-title-leading">推測テーマ</h3>
             <h3>Theme</h3>
@@ -79,20 +81,19 @@
           <div class="main-content-box" v-if="!isAlreadyGuess">
             <input
               type="text"
-              class="main-input"
-              id="main-input"
+              class="_box-shade"
               placeholder="テーマを入力"
               v-model="title"
               @change="changeDisc()"
             />
           </div>
-          <div class="main-content-box" v-else>
-            <div class="main-input result-title tint">
+          <div class="main-content-box guess-title-area" v-else>
+            <div class="_box-tint">
               <h2>{{ title }}</h2>
             </div>
           </div>
         </div>
-        <div class="guess-unit main-box" v-if="!isAlreadyGuess">
+        <div class="first-end main-box" v-if="!isAlreadyGuess">
           <div class="main-title-box">
             <h3 class="main-title-leading">単位</h3>
             <h3>Unit</h3>
@@ -101,7 +102,7 @@
           <div class="main-content-box">
             <input
               type="text"
-              class="main-input"
+              class="_box-shade"
               placeholder="単位を入力"
               v-model="unit"
             />
@@ -109,12 +110,12 @@
         </div>
       </div>
       <div class="main-row">
-        <div class="guess-data main-box">
+        <div class="_guess-data_ main-box">
           <div class="main-title-box" v-if="!isAlreadyGuess">
             <h3 class="main-title-leading">使用データ</h3>
             <h3>Data</h3>
             <div
-              class="data-number-button button"
+              class="data-number-button _gradient-button button"
               id="data-number-button"
               @click="
                 addData();
@@ -127,36 +128,46 @@
           <div class="main-title-box" v-else>
             <h3 class="main-title-leading">計算結果</h3>
             <h3>Result</h3>
-            <div class="digit-up-button button" @click="digitUp">
+            <div
+              class="digit-up-button _gradient-button button"
+              @click="digitUp"
+            >
               <h4>ざっくり表示</h4>
             </div>
-            <div class="digit-down-button button" @click="digitDown">
+            <div
+              class="digit-down-button _gradient-button button"
+              @click="digitDown"
+            >
               <h4>きっちり表示</h4>
             </div>
           </div>
           <div class="main-content-box guess-data-area" v-if="!isAlreadyGuess">
-            <div class="first-data">
+            <div class="first-data-area">
               <input
                 type="text"
                 autocomplete="on"
                 list="data1"
                 id="data-input-1"
+                class="_box-shade"
                 v-model="firstData"
-                placeholder="データを選択"
+                placeholder="データ"
                 @change="changeDisc()"
               />
               <datalist id="data1"> </datalist>
               <div
-                class="numchange-button button"
-                id="num-change-button-forf"
-                @click="numChangeForF"
+                class="numchange-button button _gradient-button"
+                @click="
+                  numChange(1);
+                  delFirst();
+                "
               >
-                <h4 id="num-change-text-forf">数値を入力</h4>
+                <h4 id="num-change-text-1">数値を入力</h4>
               </div>
             </div>
-            <div class="first-ope">
+            <div class="ope-area">
               <select
                 name="post-particle"
+                class="_box-shade"
                 v-model="operator"
                 @change="changeDisc()"
               >
@@ -166,28 +177,32 @@
                 <option value="÷">÷</option>
               </select>
             </div>
-            <div class="second-data">
+            <div class="second-data-area">
               <input
                 type="text"
                 autocomplete="on"
                 list="data2"
                 id="data-input-2"
+                class="_box-shade"
                 v-model="secondData"
-                placeholder="データを選択"
+                placeholder="データ"
                 @change="changeDisc()"
               />
               <datalist id="data2"> </datalist>
               <div
-                class="numchange-button button"
-                id="num-change-button-fors"
-                @click="numChangeForS"
+                class="numchange-button button _gradient-button"
+                @click="
+                  numChange(2);
+                  delSecond();
+                "
               >
-                <h4 id="num-change-text-fors">数値を入力</h4>
+                <h4 id="num-change-text-2">数値を入力</h4>
               </div>
             </div>
-            <div class="second-ope" v-if="howManyData === 3">
+            <div class="ope-area" v-if="howManyData === 3">
               <select
                 name="post-particle"
+                class="_box-shade"
                 v-model="operator2"
                 @change="changeDisc()"
               >
@@ -197,29 +212,32 @@
                 <option value="÷">÷</option>
               </select>
             </div>
-            <div class="third-data" v-if="howManyData === 3">
+            <div class="third-data-area" v-if="howManyData === 3">
               <input
                 type="text"
                 autocomplete="on"
                 list="data3"
                 id="data-input-3"
+                class="_box-shade"
                 v-model="thirdData"
-                placeholder="データを選択"
+                placeholder="データ"
                 @change="changeDisc()"
                 @mouseover.once="thirdStart"
               />
               <datalist id="data3"> </datalist>
               <div
-                class="numchange-button button"
-                id="num-change-button-fort"
-                @click="numChangeForT"
+                class="numchange-button button _gradient-button"
+                @click="
+                  numChange(3);
+                  delThird();
+                "
               >
-                <h4 id="num-change-text-fort">数値を入力</h4>
+                <h4 id="num-change-text-3">数値を入力</h4>
               </div>
             </div>
           </div>
           <div class="main-content-box" v-else>
-            <div class="main-input result-data tint">
+            <div class="result-data _box-tint">
               <h2>
                 {{ roundedResult
                 }}<span class="result-data-unit">{{ unit }}</span>
@@ -229,23 +247,33 @@
         </div>
       </div>
       <div class="main-row">
-        <div class="guess-equation main-box">
+        <div class="_guess-equation_ main-box">
           <div class="main-title-box">
             <h3 class="main-title-leading">推測式</h3>
             <h3>Equation</h3>
           </div>
-          <div class="main-content-box equation-area">
-            <h2>
-              {{ title }} =
-              <span class="discription">{{ discription }}</span>
-            </h2>
+          <div class="main-content-box">
+            <div class="_box-shade discription-box">
+              <h2>
+                {{ title }} =
+                <span class="discription">{{ discription }}</span>
+              </h2>
+            </div>
           </div>
         </div>
-        <div class="guess-button-area">
-          <div class="guess-button button" @click="calc" v-if="!isAlreadyGuess">
+        <div class="square-button-area">
+          <div
+            class="guess-button button _gradient-button _square"
+            @click="calc"
+            v-if="!isAlreadyGuess"
+          >
             <h3>推測</h3>
           </div>
-          <div class="next-button button" @click="next" v-else>
+          <div
+            class="next-button button _gradient-button _square"
+            @click="next"
+            v-else
+          >
             <h3>次へ</h3>
           </div>
         </div>
@@ -266,7 +294,7 @@
           </div>
           <div class="main-content-box" v-if="!isAlreadyShow">
             <select
-              class="main-input"
+              class="_box-shade"
               placeholder="検索方法を選択"
               v-model="searchStyle"
               @change="sortInit"
@@ -276,7 +304,7 @@
             </select>
           </div>
           <div class="main-content-box" v-else>
-            <div class="main-input result-title tint">
+            <div class="_box-tint">
               <h2>{{ showingData.title }}</h2>
             </div>
           </div>
@@ -298,24 +326,23 @@
             v-if="!isAlreadyShow && searchStyle === `sort`"
           >
             <select
-              class="main-input"
+              class="_box-shade"
               placeholder="絞り込み方法を選択"
               v-model="sortStyle"
               @change="sortInit"
             >
-              <option value="genre">ジャンルで絞り込み</option>
-              <option value="keyword">キーワードで絞り込み</option>
+              <option value="genre">ジャンル</option>
+              <option value="keyword">キーワード</option>
             </select>
           </div>
           <div class="main-content-box" v-if="isAlreadyShow">
-            <div class="main-input result-title tint">
+            <div class="_box-tint">
               <h2>{{ showingData.degree }}</h2>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="main-row">
+      <div class="main-row" v-if="isAlreadyShow || searchStyle === `sort`">
         <div class="second-leading main-box">
           <div
             class="main-title-box"
@@ -334,10 +361,16 @@
           <div class="main-title-box" v-if="isAlreadyShow">
             <h3 class="main-title-leading">データ</h3>
             <h3>Result</h3>
-            <div class="digit-up-button button" @click="digitUp">
+            <div
+              class="digit-up-button _gradient-button button"
+              @click="digitUp"
+            >
               <h4>ざっくり表示</h4>
             </div>
-            <div class="digit-down-button button" @click="digitDown">
+            <div
+              class="digit-down-button _gradient-button button"
+              @click="digitDown"
+            >
               <h4>きっちり表示</h4>
             </div>
           </div>
@@ -346,7 +379,7 @@
             v-if="!isAlreadyShow && sortStyle === `genre`"
           >
             <select
-              class="main-input genre-box"
+              class="_box-shade genre-box"
               placeholder="ジャンルを選択"
               v-model="sortGenre"
               @change="goGenreSort"
@@ -362,17 +395,20 @@
           >
             <input
               type="text"
-              class="main-input keyword-box"
+              class="_box-shade keyword-box"
               placeholder="キーワード"
               v-model="sortKeyword"
             />
-            <div class="keyword-add-button button" @click="goKeywordSort">
+            <div
+              class="keyword-add-button _gradient-button button"
+              @click="goKeywordSort"
+            >
               <h4>追加</h4>
             </div>
-            <div id="sort-box"></div>
+            <div id="sort-keyword-box"></div>
           </div>
           <div class="main-content-box" v-if="isAlreadyShow">
-            <div class="main-input result-data tint">
+            <div class="_box-tint result-data">
               <h2>
                 {{ roundedResult
                 }}<span class="result-data-unit">{{ showingData.unit }}</span>
@@ -383,18 +419,21 @@
               id="review-button-area"
               v-if="showingData.degree > 1"
             >
-              <div class="good-button button" @click="good">
+              <div class="good-button _gradient-button button" @click="good">
                 <h3>合ってそう</h3>
               </div>
-              <div class="bad-button button" @click="bad">
+              <div class="bad-button _gradient-button button" @click="bad">
                 <h3>間違ってそう</h3>
               </div>
+            </div>
+            <div class="year-area" v-else>
+              <h2>({{ showingData.year }}年)</h2>
             </div>
           </div>
         </div>
       </div>
       <div class="main-row">
-        <div class="guess-equation main-box">
+        <div class="_guess-equation_ main-box">
           <div class="main-title-box" v-if="!isAlreadyShow">
             <h3 class="main-title-leading">データ選択</h3>
             <h3>Select</h3>
@@ -413,10 +452,10 @@
             <h3 class="main-title-leading">親データ</h3>
             <h3>Parents</h3>
           </div>
-          <div class="main-content-box data-select-area" v-if="!isAlreadyShow">
+          <div class="main-content-box" v-if="!isAlreadyShow">
             <input
               type="text"
-              class="main-input"
+              class="_box-shade"
               v-model="searchText"
               autocomplete="on"
               list="search-result-box"
@@ -427,42 +466,56 @@
             class="main-content-box source-area"
             v-if="isAlreadyShow && showingData.degree === 1"
           >
-            <div class="link-button button" @click="goLink">
+            <div class="source-button _gradient-button button" @click="goLink">
               <h3>出典先ページへ</h3>
             </div>
-            <div class="copy-button button" @click="goCopy">
+            <div class="source-button _gradient-button button" @click="goCopy">
               <h3>出典先リンクをコピー</h3>
             </div>
           </div>
           <div
-            class="main-content-box parent-data-area"
+            class="main-content-box"
             v-if="isAlreadyShow && showingData.degree > 1"
           >
-            <h2>
-              {{ showingData.title }} =
-              <span class="discription"
-                ><span class="parent-data1 parent" @click="showParent1"></span
-                >{{ showingData.parent.operator
-                }}<span class="parent-data2 parent" @click="showParent2"></span
-                ><span v-if="showingData.parent.parent3 !== undefined"
-                  >{{ showingData.parent.operator2
+            <div class="_box-tint discription-box">
+              <h2>
+                {{ showingData.title }} =
+                <span class="discription"
+                  ><span
+                    class="parent"
+                    @click="showParent(this.showingData.parent.parent1.data)"
+                    >{{ showingData.parent.parent1.data }}</span
+                  >{{ showingData.parent.operator
                   }}<span
-                    class="parent-data3 parent"
-                    @click="showParent3"
-                  ></span></span
-              ></span>
-            </h2>
+                    class="parent"
+                    @click="showParent(this.showingData.parent.parent2.data)"
+                    >{{ showingData.parent.parent2.data }}</span
+                  ><span v-if="showingData.parent.parent3 !== undefined"
+                    >{{ showingData.parent.operator2
+                    }}<span
+                      class="parent"
+                      @click="showParent(this.showingData.parent.parent3.data)"
+                      >{{ showingData.parent.parent3.data }}</span
+                    ></span
+                  ></span
+                >
+              </h2>
+            </div>
           </div>
         </div>
-        <div class="guess-button-area">
+        <div class="square-button-area">
           <div
-            class="guess-button button"
-            @click="getData"
+            class="_gradient-button button _square"
+            @click="getShowingData"
             v-if="!isAlreadyShow"
           >
             <h3>表示</h3>
           </div>
-          <div class="next-button button" @click="searchStart" v-else>
+          <div
+            class="_gradient-button button _square"
+            @click="searchStart"
+            v-else
+          >
             <h3>次へ</h3>
           </div>
         </div>
@@ -588,7 +641,6 @@ export default {
         "鹿児島",
         "沖縄",
       ],
-      alreadySearchStart: false,
       changeDisc: function () {
         this.discription = this.firstData + this.operator + this.secondData;
         if (this.howManyData === 3) {
@@ -600,10 +652,6 @@ export default {
           const start = document.getElementById("start");
           start.classList.add("hidden");
           this.isAlreadyStarted = true;
-          if (this.isGuess) {
-            this.guesser = "block";
-            this.viewer = "none";
-          }
           const snapshot = await getDoc(doc(db, "data", "overView"));
           snapshot.data().index.forEach((e) => {
             this.data.push(e);
@@ -617,18 +665,7 @@ export default {
           snapshot.data().pref.forEach((e) => {
             this.prefData.push(e);
           });
-          if (this.isGuess) {
-            const data1 = document.getElementById("data1");
-            const data2 = document.getElementById("data2");
-            this.data.forEach((e) => {
-              const optionFor1 = document.createElement("option");
-              const optionFor2 = document.createElement("option");
-              optionFor1.value = optionFor2.value = e.title;
-              optionFor1.textContent = optionFor2.textContent = `(${e.degree})`;
-              data1.append(optionFor1);
-              data2.append(optionFor2);
-            });
-          }
+          this.appendDataInSearchBox();
           // favorite
           const favoritePost = document.getElementById(
             "favorite-post-container"
@@ -643,16 +680,14 @@ export default {
             const favData = document.createElement("div");
             const favDataText = document.createElement("h4");
             favData.classList.add("button");
-            favData.style.border = "solid 0.1vw #000000";
-            favData.style.padding = "0.7vw";
-            favData.style.width = "12vw";
-            favData.style.height = "5vw";
-            favData.style.maxHeight = "10vh";
-            favData.style.display = "flex";
-            favData.style.alignItems = "center";
-            favData.style.justifyContent = "center";
-            favDataText.style.fontSize = "1.5vw";
-            favDataText.style.lineHeight = "1.5";
+            favData.setAttribute(
+              "style",
+              "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: max(10vh, 4.17vw); display: flex; align-items: center; justify-content: center;"
+            );
+            favDataText.setAttribute(
+              "style",
+              "font-size: max(1.5vw, 12px); line-height: 1.5;"
+            );
             if (e.data().title.toString().length >= 15) {
               favDataText.textContent = this.omit(e.data().title, 14);
             } else {
@@ -664,7 +699,7 @@ export default {
               this.guesser = "none";
               this.viewer = "block";
               this.searchText = e.data().title;
-              this.getData();
+              this.getShowingData();
             };
             favoritePost.append(favData);
           });
@@ -674,15 +709,14 @@ export default {
           const newData = document.createElement("div");
           const newDataText = document.createElement("h4");
           newData.classList.add("button");
-          newData.style.border = "solid 0.1vw #000000";
-          newData.style.padding = "0.7vw";
-          newData.style.width = "12vw";
-          newData.style.height = "5vw";
-          newData.style.display = "flex";
-          newData.style.alignItems = "center";
-          newData.style.justifyContent = "center";
-          newDataText.style.fontSize = "1.5vw";
-          newDataText.style.lineHeight = "1.5";
+          newData.setAttribute(
+            "style",
+            "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: max(10vh, 4.17vw); display: flex; align-items: center; justify-content: center;"
+          );
+          newDataText.setAttribute(
+            "style",
+            "font-size: max(1.5vw, 12px); line-height: 1.5;"
+          );
           const newQ = query(this.commonLef, orderBy("date", "desc"), limit(1));
           const ne = await getDocs(newQ);
           ne.forEach(async (e) => {
@@ -697,7 +731,7 @@ export default {
               this.guesser = "none";
               this.viewer = "block";
               this.searchText = e.data().title;
-              this.getData();
+              this.getShowingData();
             };
             newPost.append(newData);
           });
@@ -1319,7 +1353,7 @@ export default {
         }
         this.appendData = [];
       },
-      showData: function () {
+      processShowingData: function () {
         this.result = this.showingData.latest;
         this.intResult = Math.round(this.showingData.latest);
         this.digit = this.intResult.toString().length;
@@ -1334,20 +1368,7 @@ export default {
         }
         this.round();
       },
-      searchStart: async function () {
-        this.isAlreadyShow = false;
-        await this.start();
-        this.dataSet();
-      }.bind(this),
-      moveToDB: async function () {
-        this.isGuess = false;
-        this.guesser = "none";
-        this.viewer = "block";
-        await this.start();
-        this.searchStart();
-        this.alreadySearchStart = true;
-      },
-      goSort: () => {
+      runSort: () => {
         const searchResultBox = document.getElementById("search-result-box");
         while (searchResultBox.lastChild) {
           searchResultBox.lastChild.remove();
@@ -1359,24 +1380,13 @@ export default {
           searchResultBox.append(resultCard);
         });
       },
-      getData: async () => {
+      getShowingData: async () => {
         if (this.searchText !== "") {
           const snapshot = await getDoc(doc(db, "data", `${this.searchText}`));
           this.showingData = snapshot.data();
           this.searchText = "";
-          this.showData();
+          this.processShowingData();
           this.isAlreadyShow = true;
-          await this.start();
-          if (this.showingData.degree > 1) {
-            const parent1 = document.querySelector(".parent-data1");
-            const parent2 = document.querySelector(".parent-data2");
-            parent1.textContent = this.showingData.parent.parent1.data;
-            parent2.textContent = this.showingData.parent.parent2.data;
-            if (this.showingData.parent.parent3 !== undefined) {
-              const parent3 = document.querySelector(".parent-data3");
-              parent3.textContent = this.showingData.parent.parent3.data;
-            }
-          }
         } else {
           alert("データを選択してください");
         }
@@ -1404,7 +1414,7 @@ export default {
         let str = e.substr(0, num - 1);
         return str + "...";
       },
-      dataSet: () => {
+      appendDataInSearchBox: () => {
         if (this.isGuess) {
           const data1 = document.getElementById("data1");
           const data2 = document.getElementById("data2");
@@ -1420,17 +1430,24 @@ export default {
           }
         } else {
           const searchResultBox = document.getElementById("search-result-box");
-          this.data.forEach((e) => {
-            const resultCard = document.createElement("option");
-            resultCard.textContent = `(${e.degree})`;
-            resultCard.value = e.title;
-            searchResultBox.append(resultCard);
-          });
+          if (searchResultBox.childElementCount === 0) {
+            this.data.forEach((e) => {
+              const resultCard = document.createElement("option");
+              resultCard.textContent = `(${e.degree})`;
+              resultCard.value = e.title;
+              searchResultBox.append(resultCard);
+            });
+          }
         }
       },
     };
   },
   methods: {
+    async searchStart() {
+      this.isAlreadyShow = false;
+      await this.start();
+      this.appendDataInSearchBox();
+    },
     addData() {
       const dataNumberButton = document.getElementById("data-number-button");
       if (this.howManyData === 2) {
@@ -1525,80 +1542,40 @@ export default {
       });
       this.alreadyThirdStarted = true;
     },
-    numChangeForF() {
+    numChange(n) {
+      const dataInput = document.getElementById(`data-input-${n}`);
+      const numChangeText = document.getElementById(`num-change-text-${n}`);
+      if (dataInput.type === "text") {
+        const datalist = document.getElementById(`data${n}`);
+        while (datalist.lastChild) {
+          datalist.lastChild.remove();
+        }
+        dataInput.type = "number";
+        dataInput.placeholder = "数値";
+        numChangeText.style.fontSize = "1.2vw";
+        numChangeText.textContent = "データを選択";
+      } else {
+        const datalist = document.getElementById(`data${n}`);
+        this.data.forEach((e) => {
+          const option = document.createElement("option");
+          option.value = e.title;
+          option.textContent = `(${e.degree})`;
+          datalist.append(option);
+        });
+        dataInput.type = "text";
+        dataInput.placeholder = "データ";
+        numChangeText.style.fontSize = "1.2vw";
+        numChangeText.textContent = "数値を入力";
+      }
+    },
+    delFirst() {
       this.firstData = "";
-      const firstDataInput = document.getElementById("data-input-1");
-      const numChangeTextForF = document.getElementById("num-change-text-forf");
-      if (firstDataInput.type === "text") {
-        const datalist = document.getElementById("data1");
-        while (datalist.lastChild) {
-          datalist.lastChild.remove();
-        }
-        firstDataInput.type = "number";
-        numChangeTextForF.style.fontSize = "1.2vw";
-        numChangeTextForF.textContent = "データを選択する";
-      } else {
-        const datalist = document.getElementById("data1");
-        this.data.forEach((e) => {
-          const optionFor1 = document.createElement("option");
-          optionFor1.value = e.title;
-          optionFor1.textContent = e.title;
-          datalist.append(optionFor1);
-        });
-        firstDataInput.type = "text";
-        numChangeTextForF.style.fontSize = "1.2vw";
-        numChangeTextForF.textContent = "数値を入力する";
-      }
     },
-    numChangeForS() {
+    delSecond() {
       this.secondData = "";
-      const secondDataInput = document.getElementById("data-input-2");
-      const numChangeTextForS = document.getElementById("num-change-text-fors");
-      if (secondDataInput.type === "text") {
-        const datalist = document.getElementById("data2");
-        while (datalist.lastChild) {
-          datalist.lastChild.remove();
-        }
-        secondDataInput.type = "number";
-        numChangeTextForS.style.fontSize = "1.2vw";
-        numChangeTextForS.textContent = "データを選択する";
-      } else {
-        const datalist = document.getElementById("data2");
-        this.data.forEach((e) => {
-          const optionFor2 = document.createElement("option");
-          optionFor2.value = e.title;
-          optionFor2.textContent = e.title;
-          datalist.append(optionFor2);
-        });
-        secondDataInput.type = "text";
-        numChangeTextForS.style.fontSize = "1.2vw";
-        numChangeTextForS.textContent = "数値を入力する";
-      }
     },
-    numChangeForT() {
+    delThird() {
       this.thirdData = "";
-      const thirdDataInput = document.getElementById("data-input-3");
-      const numChangeTextForT = document.getElementById("num-change-text-fort");
-      if (thirdDataInput.type === "text") {
-        const datalist = document.getElementById("data3");
-        while (datalist.lastChild) {
-          datalist.lastChild.remove();
-        }
-        thirdDataInput.type = "number";
-        numChangeTextForT.style.fontSize = "1.2vw";
-        numChangeTextForT.textContent = "データを選択する";
-      } else {
-        const datalist = document.getElementById("data3");
-        this.data.forEach((e) => {
-          const optionFor3 = document.createElement("option");
-          optionFor3.value = e.title;
-          optionFor3.textContent = e.title;
-          datalist.append(optionFor3);
-        });
-        thirdDataInput.type = "text";
-        numChangeTextForT.style.fontSize = "1.2vw";
-        numChangeTextForT.textContent = "数値を入力する";
-      }
     },
     async calc() {
       let additionalData = () => {
@@ -1707,7 +1684,7 @@ export default {
               this.viewer = "block";
               isChecked = true;
               await this.start();
-              this.showData();
+              this.processShowingData();
               alert("既にデータがあります。");
             }
           });
@@ -1736,7 +1713,7 @@ export default {
                 this.viewer = "block";
                 isChecked = true;
                 await this.start();
-                this.showData();
+                this.processShowingData();
                 alert("既にデータがあります。");
               }
             }
@@ -1755,10 +1732,12 @@ export default {
           }
 
           this.round();
-          const guessTitle = document.querySelector(".guess-title");
-          const guessData = document.querySelector(".guess-data");
+          const guessTitle = document.querySelector("._guess-title_");
+          const guessData = document.querySelector("._guess-data_");
+          const guessEquation = document.querySelector("._guess-equation_");
           guessTitle.classList.add("after-guess");
           guessData.classList.add("after-guess");
+          guessEquation.classList.add("after-guess");
           if (this.title !== "てすと３") {
             this.dataPost();
           }
@@ -1786,10 +1765,12 @@ export default {
       }
     },
     async next() {
-      const guessTitle = document.querySelector(".guess-title");
-      const guessData = document.querySelector(".guess-data");
+      const guessTitle = document.querySelector("._guess-title_");
+      const guessData = document.querySelector("._guess-data_");
+      const guessEquation = document.querySelector("._guess-equation_");
       guessData.classList.remove("after-guess");
       guessTitle.classList.remove("after-guess");
+      guessEquation.classList.remove("after-guess");
       this.isAlreadyGuess = false;
       this.num1 = "";
       this.num2 = "";
@@ -1817,13 +1798,10 @@ export default {
       this.digitUnitCoeff = 0;
       this.searchText = "";
       await this.start();
-      this.dataSet();
-    },
-    textDelete() {
-      this.searchText = "";
+      this.appendDataInSearchBox();
     },
     goKeywordSort() {
-      const sortBox = document.getElementById("sort-box");
+      const sortKeywordBox = document.getElementById("sort-keyword-box");
       this.sortCondition.push(this.sortKeyword);
       this.sortData = this.data;
       this.sortCondition.forEach((e) => {
@@ -1831,7 +1809,7 @@ export default {
           return ele.title.includes(e);
         });
       });
-      this.goSort();
+      this.runSort();
       const container = document.createElement("div");
       container.setAttribute(
         "style",
@@ -1863,7 +1841,7 @@ export default {
             return ele.title.includes(e);
           });
         });
-        this.goSort();
+        this.runSort();
         while (container.lastChild) {
           container.lastChild.remove();
         }
@@ -1877,7 +1855,7 @@ export default {
       sortNameBox.append(sortName);
       sortDeleteButton.append(sortDeleteButtonText);
       container.append(sortNameBox, sortDeleteButton);
-      sortBox.appendChild(container);
+      sortKeywordBox.appendChild(container);
     },
     goGenreSort() {
       let prefBool = (e) => {
@@ -1890,21 +1868,21 @@ export default {
           this.sortData = this.data.filter((e) => {
             return prefBool(e.title);
           });
-          this.goSort();
+          this.runSort();
           break;
 
         case "population":
           this.sortData = this.data.filter((e) => {
             return e.title.includes("人口データ");
           });
-          this.goSort();
+          this.runSort();
           break;
 
         case "per":
           this.sortData = this.data.filter((e) => {
             return e.title.includes("一人当たり");
           });
-          this.goSort();
+          this.runSort();
           break;
 
         default:
@@ -1961,84 +1939,26 @@ export default {
         );
       }
     },
-    showParent1() {
+    showParent(arg) {
       let bool = this.data.some((e) => {
-        return e.title === this.showingData.parent.parent1.data;
+        return e.title === arg;
       });
       if (bool) {
-        this.searchText = this.showingData.parent.parent1.data;
-        this.getData();
+        this.searchText = arg;
+        this.getShowingData();
       }
     },
-    showParent2() {
-      let bool = this.data.some((e) => {
-        return e.title === this.showingData.parent.parent2.data;
-      });
-      if (bool) {
-        this.searchText = this.showingData.parent.parent2.data;
-        this.getData();
-      }
-    },
-    showParent3() {
-      let bool = this.data.some((e) => {
-        return e.title === this.showingData.parent.parent3.data;
-      });
-      if (bool) {
-        this.searchText = this.showingData.parent.parent3.data;
-        this.getData();
-      }
-    },
-    helpOpe() {
+    async changeMode() {
       if (this.isGuess) {
-        switch (this.helpIndex) {
-          case 0:
-            this.title = "秋田県の二酸化炭素排出量";
-            break;
-          case 2:
-            this.firstData = "秋田県の人口データ";
-            break;
-          case 3:
-            this.operator = "×";
-            break;
-          case 4:
-            this.secondData = "一人当たり二酸化炭素排出量";
-            break;
-          case 5:
-            this.unit = "キログラム";
-            break;
-        }
-      }
-    },
-    test_auto() {
-      this.title = "てすと３";
-      this.firstData = "ギリギリデータ";
-      this.operator = "×";
-      this.secondData = "小数点データ";
-      this.unit = "キログラム";
-    },
-    goDev() {
-      this.$router.push("/database");
-    },
-    change() {
-      if (this.isGuess) {
-        if (!this.alreadySearchStart) {
-          this.moveToDB();
-        } else {
-          this.isGuess = !this.isGuess;
-          this.guesser = "none";
-          this.viewer = "block";
-        }
+        this.isGuess = !this.isGuess;
+        this.guesser = "none";
+        this.viewer = "block";
+        await this.start();
+        this.appendDataInSearchBox();
       } else {
-        if (!this.isAlreadyStarted) {
-          this.start();
-          this.isAlreadyGuess = false;
-        } else {
-          this.isGuess = !this.isGuess;
-          this.guesser = "block";
-          this.viewer = "none";
-          this.isAlreadyGuess = false;
-          this.dataSet();
-        }
+        this.isGuess = !this.isGuess;
+        this.guesser = "block";
+        this.viewer = "none";
       }
     },
     help() {
@@ -2069,6 +1989,27 @@ export default {
         this.ishelp = !this.ishelp;
       }
     },
+    helpOpe() {
+      if (this.isGuess) {
+        switch (this.helpIndex) {
+          case 0:
+            this.title = "秋田県の二酸化炭素排出量";
+            break;
+          case 2:
+            this.firstData = "秋田県の人口データ";
+            break;
+          case 3:
+            this.operator = "×";
+            break;
+          case 4:
+            this.secondData = "一人当たり二酸化炭素排出量";
+            break;
+          case 5:
+            this.unit = "キログラム";
+            break;
+        }
+      }
+    },
     nextHelp() {
       this.helpDeleteIndex = this.helpIndex;
       this.helpIndex = this.helpIndex + 1;
@@ -2079,17 +2020,151 @@ export default {
       this.helpIndex = this.helpIndex - 1;
       this.goHelp();
     },
+
+    //開発用関数
+    test_auto() {
+      this.title = "てすと３";
+      this.firstData = "ギリギリデータ";
+      this.operator = "×";
+      this.secondData = "小数点データ";
+      this.unit = "キログラム";
+    },
+    goDev() {
+      this.$router.push("/database");
+    },
   },
 };
 </script>
 
 <style>
-/* コモン */
-.tint {
-  background: linear-gradient(to right, #ffffff, #99daff);
+/* ここからルート */
+*,
+::after,
+::before {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  letter-spacing: 0.1em;
 }
 
-/* アップバー */
+#app {
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #000;
+}
+/* ここまでルート */
+
+/* ここからスタート */
+.start {
+  position: fixed;
+  top: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 10;
+  background-color: white;
+}
+.start.hidden {
+  z-index: -1;
+}
+.start-background-text {
+  display: flex;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to right, #cccccc, #7aaecc);
+}
+.start-background-text h1 {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 38vw;
+  letter-spacing: 0;
+  color: #ffff00;
+}
+.start-front-content {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+.start-foreground-text {
+  width: 100vw;
+  height: 45vh;
+  position: absolute;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.start-foreground-text h1 {
+  letter-spacing: 1vw;
+  font-weight: 700;
+  font-size: 15vw;
+  position: absolute;
+  left: 50px;
+  bottom: 0px;
+  font-style: italic;
+  color: #000;
+  line-height: 1.1;
+}
+.lineArrow {
+  position: fixed;
+  top: calc(45vh - 2vw);
+  left: 50px;
+  width: 65vw;
+  height: 2vw;
+  border-bottom: 1vw solid #000;
+  border-right: 1.4vw solid #000;
+  /*傾きを調節*/
+  transform: skew(45deg);
+  margin: -10px 0 0 -25px;
+}
+.start-button-area {
+  width: 100vw;
+  height: 45vh;
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+.start-button-box {
+  width: 30vw;
+  height: 14vw;
+  border: 0.5vw solid;
+  line-height: 1;
+  box-shadow: 0.5vw 0.5vw 1vw #333;
+}
+.start-button-box h1 {
+  font-size: 5vw;
+  margin-top: 2vw;
+  margin-left: 3vw;
+  text-align: left;
+}
+.start-button-box h3 {
+  font-size: 3vw;
+  font-style: italic;
+  margin-bottom: 1vw;
+  margin-top: 2vw;
+  margin-right: 2vw;
+  text-align: right;
+}
+.line-arrow-in-box {
+  top: 0;
+  width: 26vw;
+  height: 1vw;
+  border-bottom: 0.5vw solid #000;
+  border-right: 0.8vw solid #000;
+  /*傾きを調節*/
+  transform: skew(45deg);
+  margin-left: 1.5vw;
+}
+/* ここまでスタート */
+
+/* ここからアップバー */
 .app-bar {
   height: 10vh;
   background: linear-gradient(to right, #cccccc, #7aaecc);
@@ -2163,535 +2238,13 @@ export default {
   font-size: 3vh;
   font-style: italic;
 }
+/* ここまでアップバー */
 
-/* ボディ */
-.body {
-  display: flex;
-}
-
-/* スタート */
-.start {
-  position: fixed;
-  top: 0;
-  height: 100vh;
-  width: 100vw;
-  min-height: 500px;
-  z-index: 10;
-  background-color: white;
-}
-.start.hidden {
-  z-index: -1;
-}
-.start-background-text {
-  display: flex;
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(to right, #cccccc, #7aaecc);
-}
-.start-background-text h1 {
-  display: inline-block;
-  font-weight: 700;
-  font-size: 35vw;
-  color: #ffff00;
-}
-.start-front-content {
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-}
-.start-foreground-text {
-  width: 100vw;
-  height: 45vh;
-  position: absolute;
-  top: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.start-foreground-text h1 {
-  letter-spacing: 1vw;
-  font-weight: 700;
-  font-size: 15vw;
-  position: absolute;
-  left: 50px;
-  bottom: 0px;
-  font-style: italic;
-  color: #000;
-  line-height: 1.1;
-}
-.lineArrow {
-  position: fixed;
-  top: calc(45vh - 2vw);
-  left: 50px;
-  width: 65vw;
-  height: 2vw;
-  border-bottom: 1vw solid #000;
-  border-right: 1.4vw solid #000;
-  /*傾きを調節*/
-  transform: skew(45deg);
-  margin: -10px 0 0 -25px;
-}
-.start-button-box {
-  width: 30vw;
-  height: 14vw;
-  border: 5px solid;
-  line-height: 1;
-  box-shadow: 0.5vw 0.5vw 1vw #333;
-}
-.start-button-box h1 {
-  font-size: 5vw;
-  margin-top: 2vw;
-  margin-left: 3vw;
-  text-align: left;
-}
-.start-button-box h3 {
-  font-size: 3vw;
-  font-style: italic;
-  margin-bottom: 1vw;
-  margin-top: 2vw;
-  margin-right: 2vw;
-  text-align: right;
-}
-.start-button-area {
-  width: 100vw;
-  height: 45vh;
-  position: absolute;
-  bottom: 0;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-}
-.line-arrow-in-box {
-  top: 0;
-  width: 26vw;
-  height: 1vw;
-  border-bottom: 0.5vw solid #000;
-  border-right: 0.8vw solid #000;
-  /*傾きを調節*/
-  transform: skew(45deg);
-  margin-left: 1.5vw;
-}
-
-/* メイン */
-.main {
-  background-color: #fff;
-  height: 90vh;
-  width: 80vw;
-}
-.main-row {
-  position: relative;
-  display: flex;
-  padding-left: 4vw;
-  padding-right: 4vw;
-  height: 25vh;
-  margin-top: 5vh;
-}
-.main-row:first-child::after,
-.main-row:nth-child(2)::after {
-  content: "";
-  display: block;
-  width: 75vw;
-  height: 0.15vw;
-  background-color: #000;
-  position: absolute;
-  bottom: 0;
-  left: 2vw;
-}
-.main-box {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  position: relative;
-}
-.main-title-box {
-  display: flex;
-}
-.main-title-box * {
-  display: inline-block;
-  font-size: 2vw;
-  font-style: italic;
-}
-.main-title-leading {
-  margin-right: 3vw;
-  position: relative;
-}
-.main-title-leading::after {
-  content: "";
-  display: block;
-  width: 0.15vw;
-  height: 2.5vw;
-  background-color: #000;
-  position: absolute;
-  right: -1.5vw;
-  top: -0.25vw;
-}
-.guess-title,
-.first-leading {
-  margin-right: 8vw;
-  width: 32vw;
-  position: relative;
-}
-.guess-title::after,
-.first-leading::after {
-  content: "";
-  display: block;
-  width: 0.15vw;
-  height: 26vh;
-  background-color: #000;
-  position: absolute;
-  right: -4vw;
-  top: -3vh;
-}
-.after-guess {
-  width: 50vw;
-}
-.after-guess::after {
-  display: none;
-}
-
-.main-input {
-  display: block;
-  font-weight: 700;
-  font-size: 2vw;
-  height: 6vw;
-  padding: 1vw;
-  border-radius: 5px;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #cccccc, #7aaecc);
-  width: 100%;
-  box-sizing: border-box;
-}
-.result-title {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(to right, #ffffff, #99daff);
-}
-.main-input h2 {
-  font-size: 2vw;
-  display: block;
-}
-.main-content-box {
-  height: 20vh;
-  display: flex;
-  align-items: center;
-}
-.guess-unit,
-.first-end {
-  width: 32vw;
-}
-
-.guess-data-area div input,
-.guess-data-area div select {
-  display: block;
-  height: 3vw;
-  min-height: 15px;
-  font-weight: 700;
-  margin-right: 2vw;
-  border-radius: 5px;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #cccccc, #7aaecc);
-  width: 100%;
-  box-sizing: border-box;
-}
-.guess-data-area div input {
-  padding: 0.5vw;
-  width: 18vw;
-  font-size: 1.3vw;
-}
-.numchange-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 14vw;
-  margin-left: 2vw;
-  margin-top: 2vh;
-  height: 3vw;
-  min-height: 15px;
-  font-weight: 700;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffff00, #99daff);
-  box-sizing: border-box;
-}
-.numchange-button h4 {
-  display: block;
-  font-size: 1.2vw;
-}
-.data-number-button,
-.digit-up-button,
-.digit-down-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100px;
-  margin-left: 2vw;
-  height: 2vw;
-  min-height: 15px;
-  font-weight: 700;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffff00, #99daff);
-  box-sizing: border-box;
-}
-.digit-up-button,
-.digit-down-button {
-  width: 90px;
-}
-.data-number-button h4,
-.digit-up-button h4,
-.digit-down-button h4 {
-  display: block;
-  font-size: 10px;
-}
-.guess-data-area div select {
-  width: 5vw;
-  font-size: 1.5vw;
-}
-.guess-data-area {
-  display: flex;
-}
-.third-data input {
-  margin-right: 0;
-}
-.result-data {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(to right, #ffffff, #99daff);
-  width: 50vw;
-}
-.result-data-unit {
-  margin-left: 1vw;
-  font-size: 1vw;
-}
-
-.equation-area {
-  width: 50vw;
-  height: 6vw;
-  margin-top: calc((25vh - 8.5vw) / 2);
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffffff, #99daff);
-  box-sizing: border-box;
-}
-.equation-area h2 {
-  font-size: 1.6vw;
-  margin-left: 10px;
-  margin-bottom: 0.8vw;
-  line-height: 2;
-  text-align: left;
-  display: block;
-  box-sizing: border-box;
-}
-.guess-equation {
-  width: 50vw;
-  margin-right: 8vw;
-}
-.guess-equation::after {
-  content: "";
-  display: block;
-  width: 0.15vw;
-  height: 26vh;
-  background-color: #000;
-  position: absolute;
-  right: -4vw;
-  top: -3vh;
-}
-.guess-button-area {
-  width: 14vw;
-  height: 20vh;
-  margin-bottom: 5vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.discription {
-  display: block;
-  width: calc(50vw - 20px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.guess-button,
-.next-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 12vw;
-  height: 12vw;
-  max-width: 20vh;
-  max-height: 20vh;
-  font-weight: 700;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffff00, #99daff);
-  box-sizing: border-box;
-}
-.guess-button h3,
-.next-button h3 {
-  display: block;
-  font-size: min(5vh, 3vw);
-}
-
-.second-leading {
-  width: 72vw;
-}
-.genre-box {
-  width: 32vw;
-}
-.keyword-box {
-  width: 20vw;
-}
-.keyword-add-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 6vw;
-  margin-left: 2vw;
-  margin-top: 2vh;
-  height: 3vw;
-  min-height: 15px;
-  font-weight: 700;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffff00, #99daff);
-  box-sizing: border-box;
-}
-.keyword-add-button h4 {
-  display: block;
-  font-size: 1.2vw;
-}
-#sort-box {
-  width: 42vw;
-  height: 100%;
-  margin-left: 2vw;
-  display: flex;
-}
-.review-button-area {
-  width: 20vw;
-  margin-left: 2vw;
-}
-.good-button,
-.bad-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 14vw;
-  margin-left: 3vw;
-  margin-bottom: 2vh;
-  height: 3vw;
-  min-height: 20px;
-  font-weight: 700;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffff00, #99daff);
-  box-sizing: border-box;
-}
-.good-button h3,
-.bad-button h3 {
-  display: block;
-  font-size: 1.5vw;
-}
-
-.source-area {
-  display: flex;
-  justify-content: space-evenly;
-}
-.link-button,
-.copy-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20vw;
-  margin-left: 3vw;
-  margin-bottom: 2vh;
-  height: 3vw;
-  min-height: 20px;
-  font-weight: 700;
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffff00, #99daff);
-  box-sizing: border-box;
-}
-.link-button h3 {
-  display: block;
-  font-size: 1.5vw;
-}
-.copy-button h3 {
-  display: block;
-  font-size: 1.5vw;
-}
-.parent-data-area {
-  width: 50vw;
-  height: 6vw;
-  margin-top: calc((25vh - 8.5vw) / 2);
-  border: solid #000 1.5px;
-  box-shadow: 2px 2px 5px #3c3c3c;
-  background: linear-gradient(to right, #ffffff, #99daff);
-  box-sizing: border-box;
-}
-.parent-data-area h2 {
-  font-size: 1.6vw;
-  margin-left: 10px;
-  margin-bottom: 0.8vw;
-  line-height: 2;
-  text-align: left;
-  display: block;
-  box-sizing: border-box;
-}
-.parent {
-  text-decoration: underline;
-  color: #00a3ff;
-  cursor: pointer;
-}
-
-#result-area {
-  display: none;
-}
-
-/* ヘルプ関連 */
-.help-shadow {
-  background-color: #333333;
-  opacity: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  width: 100vw;
-  height: 100vh;
-  transition-duration: 1s;
-}
-.help-box {
-  position: relative;
-  z-index: 0;
-}
-.help {
-  display: none;
-  position: relative;
-  background-color: #dddddd;
-  opacity: 0;
-  z-index: -1;
-  transition-duration: 1s;
-}
-
-.data-area {
-  display: none;
-}
-
-/* サイド */
+/* ここからサイド */
 .side-bar {
   background: linear-gradient(#ffffff, #99daff);
   height: 90vh;
   width: 20vw;
-  min-height: 500px;
 }
 .sidebar-title-box {
   margin-left: 2vw;
@@ -2739,12 +2292,12 @@ export default {
   align-items: center;
 }
 #favorite-post-container {
-  margin: 3vh 2.5vw;
-  height: 30vh;
-  justify-content: space-between;
+  height: 36vh;
+  margin: 0 4vw;
+  justify-content: space-evenly;
 }
 #new-post-container {
-  margin: 3vh 2.5vw;
+  margin: 3vh 4vw;
   height: 15vh;
   justify-content: center;
 }
@@ -2772,5 +2325,692 @@ export default {
   height: 30vh;
   margin-top: 15px;
   position: relative;
+}
+/* ここまでサイドバー */
+
+/* ここからメイン */
+/* 構成 */
+.body {
+  display: flex;
+}
+.main {
+  background-color: #fff;
+  height: 90vh;
+  width: 80vw;
+}
+.main-row {
+  position: relative;
+  display: flex;
+  padding-left: 4vw;
+  padding-right: 4vw;
+  height: 25vh;
+  margin-top: 5vh;
+}
+.main-row:first-child::after,
+.main-row:nth-child(2)::after {
+  content: "";
+  display: block;
+  width: 75vw;
+  height: 0.15vw;
+  background-color: #000;
+  position: absolute;
+  bottom: 0;
+  left: 2vw;
+}
+.main-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+.main-content-box {
+  height: 20vh;
+  display: flex;
+  align-items: center;
+}
+.first-leading {
+  margin-right: 8vw;
+  width: 32vw;
+  position: relative;
+}
+.first-leading::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 26vh;
+  background-color: #000;
+  position: absolute;
+  right: -4vw;
+  top: -3vh;
+}
+.first-end {
+  width: 32vw;
+}
+.after-guess {
+  width: 80vw;
+}
+.after-guess .main-content-box ._box-shade {
+  background: linear-gradient(to right, #ffffff, #99daff);
+}
+.after-guess::after {
+  display: none;
+}
+/* ここまで構成 */
+
+/* コモンパーツ */
+._box-shade {
+  display: block;
+  font-weight: 700;
+  font-size: 2vw;
+  height: 6vw;
+  padding: 1vw;
+  border-radius: 5px;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #cccccc, #7aaecc);
+  width: 100%;
+  box-sizing: border-box;
+}
+._box-tint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 2vw;
+  height: 6vw;
+  padding: 1vw;
+  border-radius: 5px;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffffff, #99daff);
+  width: 100%;
+  box-sizing: border-box;
+}
+._box-shade h2,
+._box-tint h2 {
+  font-size: 2vw;
+}
+._gradient-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: solid #000 1.5px;
+  box-shadow: 2px 2px 5px #3c3c3c;
+  background: linear-gradient(to right, #ffff00, #99daff);
+  box-sizing: border-box;
+}
+._square {
+  width: 12vw;
+  height: 12vw;
+  max-width: 20vh;
+  max-height: 20vh;
+}
+._square h3 {
+  display: block;
+  font-size: min(5vh, 3vw);
+}
+
+.main-title-box {
+  display: flex;
+}
+.main-title-box * {
+  display: block;
+  font-size: 2vw;
+  font-style: italic;
+}
+.main-title-leading {
+  margin-right: 3vw;
+  position: relative;
+}
+.main-title-leading::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 2.5vw;
+  background-color: #000;
+  position: absolute;
+  right: -1.5vw;
+  top: -0.25vw;
+}
+.square-button-area {
+  width: 14vw;
+  height: 20vh;
+  margin-bottom: 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.button:hover {
+  transform: scale(1.1);
+  transition-duration: 0.5s;
+  cursor: pointer;
+}
+/* ここまでコモンパーツ */
+
+/* メインの詳細 */
+/* 推測1段目 */
+.guess-title-area {
+  width: 50vw;
+}
+
+/* 推測2段目 */
+.guess-data-area {
+  display: flex;
+}
+.guess-data-area div ._box-shade {
+  height: 3vw;
+  min-height: 15px;
+}
+.guess-data-area .first-data-area ._box-shade {
+  margin-left: 0;
+}
+.guess-data-area div input {
+  padding: 0.5vw;
+  width: 18vw;
+  font-size: 1.3vw;
+}
+.guess-data-area div select {
+  padding: 0 0 0 0.5vw;
+  margin: 0 2vw 0 2vw;
+  width: 5vw;
+  font-size: 1vw;
+  font-weight: 900;
+}
+.data-number-button,
+.digit-up-button,
+.digit-down-button,
+.numchange-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  margin-left: 2vw;
+  height: 2vw;
+  min-height: 15px;
+}
+.numchange-button {
+  margin-top: 2vh;
+  margin-left: auto;
+  margin-right: auto;
+}
+.data-number-button {
+  width: 100px;
+}
+.data-number-button h4,
+.digit-up-button h4,
+.digit-down-button h4,
+.numchange-button h4 {
+  display: block;
+  font-size: 10px;
+}
+/* うち閲覧2段目と共通 */
+.result-data {
+  width: 50vw;
+}
+.result-data-unit {
+  margin-left: 1vw;
+  font-size: 1vw;
+}
+
+/* 推測3段目 */
+/* うち閲覧3段目と共通 */
+.discription-box {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 40px;
+}
+.discription-box h2 {
+  font-size: 1.6vw;
+  margin-bottom: 0.8vw;
+  line-height: 2;
+  text-align: left;
+  display: block;
+  box-sizing: border-box;
+}
+._guess-equation_ {
+  width: 50vw;
+  margin-right: 8vw;
+}
+._guess-equation_::after {
+  content: "";
+  display: block;
+  width: 0.15vw;
+  height: 26vh;
+  background-color: #000;
+  position: absolute;
+  right: -4vw;
+  top: -3vh;
+}
+.discription {
+  display: block;
+  width: calc(50vw - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 閲覧1段目 */
+
+/* 閲覧2段目 */
+.second-leading {
+  width: 72vw;
+}
+.genre-box {
+  width: 32vw;
+}
+.keyword-box {
+  width: 20vw;
+}
+.keyword-add-button {
+  width: 6vw;
+  margin-left: 2vw;
+  margin-top: 2vh;
+  height: 3vw;
+  min-height: 15px;
+}
+.keyword-add-button h4 {
+  display: block;
+  font-size: 1.2vw;
+}
+#sort-keyword-box {
+  width: 42vw;
+  height: 100%;
+  margin-left: 2vw;
+  display: flex;
+}
+.review-button-area,
+.year-area {
+  width: 20vw;
+  margin-left: 2vw;
+}
+.year-area h2 {
+  font-size: 2vw;
+}
+.good-button,
+.bad-button {
+  width: 14vw;
+  margin-left: 3vw;
+  margin-bottom: 2vh;
+  height: 3vw;
+  min-height: 20px;
+}
+.good-button h3,
+.bad-button h3 {
+  display: block;
+  font-size: 1.5vw;
+}
+
+/* 閲覧3段目 */
+.source-area {
+  display: flex;
+  justify-content: space-evenly;
+}
+.source-button {
+  width: 20vw;
+  margin-left: 3vw;
+  margin-bottom: 2vh;
+  height: 3vw;
+  min-height: 20px;
+}
+.source-button h3 {
+  display: block;
+  font-size: 1.5vw;
+}
+.parent {
+  text-decoration: underline;
+  color: #00a3ff;
+  cursor: pointer;
+}
+/* ここまでメイン詳細 */
+
+/* ヘルプ関連 */
+.help-shadow {
+  background-color: #333333;
+  opacity: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100vw;
+  height: 100vh;
+  transition-duration: 1s;
+}
+.help-box {
+  position: relative;
+  z-index: 0;
+}
+.help {
+  display: none;
+  position: relative;
+  background-color: #dddddd;
+  opacity: 0;
+  z-index: -1;
+  transition-duration: 1s;
+}
+
+.data-area {
+  display: none;
+}
+
+/* 開発用 */
+.dev {
+  position: fixed;
+  z-index: 3;
+  top: 50px;
+  left: 50px;
+}
+
+@media (max-aspect-ratio: 7/6) {
+  /* ここからスタート */
+  .start-background-text h1 {
+    transform: scale(1, 1.5);
+  }
+  .start-foreground-text h1 {
+    font-weight: 900;
+    font-size: 20vw;
+    left: 30px;
+  }
+  .lineArrow {
+    left: 40px;
+    width: 80vw;
+    height: 3vw;
+  }
+  .start-button-area {
+    height: 35vh;
+    bottom: 10vh;
+  }
+  .start-button-box {
+    width: 35vw;
+    height: 20vw;
+  }
+  .start-button-box h1 {
+    font-size: 6vw;
+    margin-top: 3vw;
+    margin-left: 4vw;
+  }
+  .start-button-box h3 {
+    font-size: 4vw;
+    margin-bottom: 1vw;
+    margin-top: 4vw;
+    margin-right: 2vw;
+  }
+  .line-arrow-in-box {
+    top: 0;
+    width: 30.5vw;
+    height: 1.2vw;
+    border-bottom: 0.6vw solid #000;
+    border-right: 0.9vw solid #000;
+  }
+  /* ここまでスタート */
+
+  /* ここからアップバー */
+  .app-bar-leading {
+    margin-left: 16px;
+  }
+  .app-bar-leading h1 {
+    font-size: 4vh;
+  }
+  .app-bar-title::after {
+    content: "";
+    display: block;
+    width: 0.3vh;
+    height: 4.6vh;
+    background-color: #000;
+    position: absolute;
+    right: -16px;
+    top: -0.3vh;
+  }
+  .app-bar-mode {
+    margin-left: 32px;
+  }
+  .app-bar-leading h3 {
+    font-size: 2vh;
+    margin-top: 2vh;
+    margin-left: 3px;
+  }
+  .app-bar-end {
+    margin-right: 25px;
+  }
+  .app-bar-mode-change {
+    font-size: 2vh;
+    margin-right: 26px;
+  }
+  .app-bar-mode-change::after {
+    width: 0.2vh;
+    height: 2.6vh;
+    right: -13px;
+    top: -0.3vh;
+  }
+  .app-bar-help {
+    font-size: 2vh;
+  }
+  /* ここまでアップバー */
+
+  /* ここからサイド */
+  #favorite-post-container {
+    margin: 3vh 3vw;
+  }
+  #new-post-container {
+    margin: 3vh 3vw;
+  }
+  /* ここまでサイドバー */
+
+  /* ここからメイン */
+  /* 構成 */
+
+  /* コモンパーツ */
+  ._box-shade {
+    font-size: 3vw;
+    height: 9vw;
+  }
+  ._box-tint {
+    font-size: 3vw;
+    height: 9vw;
+  }
+  ._box-shade h2,
+  ._box-tint h2 {
+    font-size: 3vw;
+  }
+
+  .main-title-box * {
+    font-size: 2.5vw;
+  }
+  .main-title-leading {
+    margin-right: 4vw;
+  }
+  .main-title-leading::after {
+    width: 0.2vw;
+    height: 3.3vw;
+    right: -2vw;
+    top: -0.4vw;
+  }
+  /* ここまでコモンパーツ */
+
+  /* メインの詳細 */
+  /* 推測1段目 */
+
+  /* 推測2段目 */
+  .guess-data-area div ._box-shade {
+    height: 5vw;
+  }
+  .guess-data-area div input {
+    font-size: 2vw;
+  }
+  .guess-data-area div select {
+    font-size: 1vw;
+    font-weight: 900;
+  }
+  .data-number-button,
+  .digit-up-button,
+  .digit-down-button,
+  .numchange-button {
+    height: 2.5vw;
+    min-height: 15px;
+  }
+  .numchange-button {
+    margin-top: 2vh;
+  }
+
+  /* 推測3段目 */
+  /* うち閲覧3段目と共通 */
+  .discription-box h2 {
+    font-size: 2.25vw;
+    padding-bottom: 0;
+  }
+
+  /* 閲覧1段目 */
+
+  /* 閲覧2段目 */
+  .keyword-add-button {
+    height: 4vw;
+  }
+  .year-area h2 {
+    font-size: 3vw;
+  }
+  .good-button,
+  .bad-button {
+    height: 4vw;
+  }
+  .good-button h3,
+  .bad-button h3 {
+    font-size: 1.5vw;
+  }
+
+  /* 閲覧3段目 */
+  .source-button {
+    height: 4vw;
+  }
+  .source-button h3 {
+    font-size: 1.5vw;
+  }
+  /* ここまでメイン詳細 */
+}
+@media (min-aspect-ratio: 12/5) {
+  /* ここからアップバー */
+  .app-bar {
+    height: 4.16vw;
+  }
+  .app-bar-leading h1 {
+    font-size: 2.5vw;
+  }
+  .app-bar-title::after {
+    width: 0.16vw;
+    height: 2.92vw;
+    top: -0.21vw;
+  }
+  .app-bar-leading h3 {
+    font-size: 1.25vw;
+    margin-top: 1.25vw;
+  }
+  .app-bar-mode-change {
+    font-size: 1.25vw;
+  }
+  .app-bar-mode-change::after {
+    width: 0.13vw;
+    height: 1.67vw;
+    top: -0.21vw;
+  }
+  .app-bar-help {
+    font-size: 1.25vw;
+  }
+  /* ここまでアップバー */
+
+  /* ここからサイド */
+  .side-bar {
+    height: 37.5vw;
+  }
+  #favorite-post-container {
+    height: 15vw;
+  }
+  #new-post-container {
+    margin: 1.25vw 4vw;
+    height: 6.25vw;
+  }
+  .line-arrow-in-sidebar {
+    width: 15vw;
+  }
+  .favorite-post::after,
+  .new-post::after {
+    width: 16vw;
+  }
+  .favorite-post {
+    height: 16.66vw;
+  }
+  .ad {
+    height: calc(8.33vw - 30px);
+  }
+  .new-post {
+    height: 12.5vw;
+  }
+  /* ここまでサイドバー */
+
+  /* ここからメイン */
+  /* 構成 */
+  .body {
+    display: flex;
+  }
+  .main {
+    height: 37.5vw;
+  }
+  .main-row {
+    height: 10.42vw;
+    margin-top: 2.08vw;
+  }
+  .main-content-box {
+    height: 8.33vw;
+  }
+  .first-leading::after {
+    height: 10.83vw;
+    top: -1.25vw;
+  }
+  /* ここまで構成 */
+
+  /* コモンパーツ */
+  ._square {
+    max-width: 8.33vw;
+    max-height: 8.33vw;
+  }
+  ._square h3 {
+    font-size: 2.08vw;
+  }
+
+  .square-button-area {
+    height: 8.33vw;
+    margin-bottom: 2.08vw;
+  }
+  /* ここまでコモンパーツ */
+
+  /* メインの詳細 */
+  /* 推測1段目 */
+
+  /* 推測2段目 */
+  .numchange-button {
+    margin-top: 0.83vw;
+  }
+
+  /* 推測3段目 */
+  /* うち閲覧3段目と共通 */
+  ._guess-equation_::after {
+    height: 10.83vw;
+    top: -1.25vw;
+  }
+
+  /* 閲覧1段目 */
+
+  /* 閲覧2段目 */
+  .keyword-add-button {
+    margin-top: 0.83vw;
+  }
+  .good-button,
+  .bad-button {
+    margin-bottom: 0.83vw;
+  }
+
+  /* 閲覧3段目 */
+  .source-button {
+    margin-bottom: 0.83vw;
+  }
+  /* ここまでメイン詳細 */
 }
 </style>
