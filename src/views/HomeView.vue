@@ -33,7 +33,7 @@
       </div>
       <div class="new-post">
         <div class="sidebar-title-box">
-          <h4 class="sidebar-title-leading">新着の推測</h4>
+          <h4 class="sidebar-title-leading">新着</h4>
           <h4 class="sidebar-title-end">Latest</h4>
         </div>
         <div class="line-arrow-in-sidebar"></div>
@@ -87,7 +87,7 @@
               @change="changeDisc()"
             />
           </div>
-          <div class="main-content-box" v-else>
+          <div class="main-content-box guess-title-area" v-else>
             <div class="_box-tint">
               <h2>{{ title }}</h2>
             </div>
@@ -331,8 +331,8 @@
               v-model="sortStyle"
               @change="sortInit"
             >
-              <option value="genre">ジャンルで絞り込み</option>
-              <option value="keyword">キーワードで絞り込み</option>
+              <option value="genre">ジャンル</option>
+              <option value="keyword">キーワード</option>
             </select>
           </div>
           <div class="main-content-box" v-if="isAlreadyShow">
@@ -399,7 +399,10 @@
               placeholder="キーワード"
               v-model="sortKeyword"
             />
-            <div class="_gradient-button button" @click="goKeywordSort">
+            <div
+              class="keyword-add-button _gradient-button button"
+              @click="goKeywordSort"
+            >
               <h4>追加</h4>
             </div>
             <div id="sort-keyword-box"></div>
@@ -679,11 +682,11 @@ export default {
             favData.classList.add("button");
             favData.setAttribute(
               "style",
-              "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: 5vw; max-height: 10vh; display: flex; align-items: center; justify-content: center;"
+              "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: max(10vh, 4.17vw); display: flex; align-items: center; justify-content: center;"
             );
             favDataText.setAttribute(
               "style",
-              "font-size: 1.5vw; line-height: 1.5;"
+              "font-size: max(1.5vw, 12px); line-height: 1.5;"
             );
             if (e.data().title.toString().length >= 15) {
               favDataText.textContent = this.omit(e.data().title, 14);
@@ -708,11 +711,11 @@ export default {
           newData.classList.add("button");
           newData.setAttribute(
             "style",
-            "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: 5vw; max-height: 10vh; display: flex; align-items: center; justify-content: center;"
+            "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: max(10vh, 4.17vw); display: flex; align-items: center; justify-content: center;"
           );
           newDataText.setAttribute(
             "style",
-            "font-size: 1.5vw; line-height: 1.5;"
+            "font-size: max(1.5vw, 12px); line-height: 1.5;"
           );
           const newQ = query(this.commonLef, orderBy("date", "desc"), limit(1));
           const ne = await getDocs(newQ);
@@ -2059,7 +2062,6 @@ export default {
   top: 0;
   height: 100vh;
   width: 100vw;
-  min-height: 500px;
   z-index: 10;
   background-color: white;
 }
@@ -2120,6 +2122,15 @@ export default {
   transform: skew(45deg);
   margin: -10px 0 0 -25px;
 }
+.start-button-area {
+  width: 100vw;
+  height: 45vh;
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
 .start-button-box {
   width: 30vw;
   height: 14vw;
@@ -2141,14 +2152,15 @@ export default {
   margin-right: 2vw;
   text-align: right;
 }
-.start-button-area {
-  width: 100vw;
-  height: 45vh;
-  position: absolute;
-  bottom: 0;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
+.line-arrow-in-box {
+  top: 0;
+  width: 26vw;
+  height: 1vw;
+  border-bottom: 0.5vw solid #000;
+  border-right: 0.8vw solid #000;
+  /*傾きを調節*/
+  transform: skew(45deg);
+  margin-left: 1.5vw;
 }
 /* ここまでスタート */
 
@@ -2314,16 +2326,6 @@ export default {
   margin-top: 15px;
   position: relative;
 }
-.line-arrow-in-box {
-  top: 0;
-  width: 26vw;
-  height: 1vw;
-  border-bottom: 0.5vw solid #000;
-  border-right: 0.8vw solid #000;
-  /*傾きを調節*/
-  transform: skew(45deg);
-  margin-left: 1.5vw;
-}
 /* ここまでサイドバー */
 
 /* ここからメイン */
@@ -2385,7 +2387,7 @@ export default {
   width: 32vw;
 }
 .after-guess {
-  width: 50vw;
+  width: 80vw;
 }
 .after-guess .main-content-box ._box-shade {
   background: linear-gradient(to right, #ffffff, #99daff);
@@ -2488,6 +2490,9 @@ export default {
 
 /* メインの詳細 */
 /* 推測1段目 */
+.guess-title-area {
+  width: 50vw;
+}
 
 /* 推測2段目 */
 .guess-data-area {
@@ -2496,7 +2501,6 @@ export default {
 .guess-data-area div ._box-shade {
   height: 3vw;
   min-height: 15px;
-  margin-left: 2vw;
 }
 .guess-data-area .first-data-area ._box-shade {
   margin-left: 0;
@@ -2508,6 +2512,7 @@ export default {
 }
 .guess-data-area div select {
   padding: 0 0 0 0.5vw;
+  margin: 0 2vw 0 2vw;
   width: 5vw;
   font-size: 1vw;
   font-weight: 900;
@@ -2694,5 +2699,318 @@ export default {
   z-index: 3;
   top: 50px;
   left: 50px;
+}
+
+@media (max-aspect-ratio: 7/6) {
+  /* ここからスタート */
+  .start-background-text h1 {
+    transform: scale(1, 1.5);
+  }
+  .start-foreground-text h1 {
+    font-weight: 900;
+    font-size: 20vw;
+    left: 30px;
+  }
+  .lineArrow {
+    left: 40px;
+    width: 80vw;
+    height: 3vw;
+  }
+  .start-button-area {
+    height: 35vh;
+    bottom: 10vh;
+  }
+  .start-button-box {
+    width: 35vw;
+    height: 20vw;
+  }
+  .start-button-box h1 {
+    font-size: 6vw;
+    margin-top: 3vw;
+    margin-left: 4vw;
+  }
+  .start-button-box h3 {
+    font-size: 4vw;
+    margin-bottom: 1vw;
+    margin-top: 4vw;
+    margin-right: 2vw;
+  }
+  .line-arrow-in-box {
+    top: 0;
+    width: 30.5vw;
+    height: 1.2vw;
+    border-bottom: 0.6vw solid #000;
+    border-right: 0.9vw solid #000;
+  }
+  /* ここまでスタート */
+
+  /* ここからアップバー */
+  .app-bar-leading {
+    margin-left: 16px;
+  }
+  .app-bar-leading h1 {
+    font-size: 4vh;
+  }
+  .app-bar-title::after {
+    content: "";
+    display: block;
+    width: 0.3vh;
+    height: 4.6vh;
+    background-color: #000;
+    position: absolute;
+    right: -16px;
+    top: -0.3vh;
+  }
+  .app-bar-mode {
+    margin-left: 32px;
+  }
+  .app-bar-leading h3 {
+    font-size: 2vh;
+    margin-top: 2vh;
+    margin-left: 3px;
+  }
+  .app-bar-end {
+    margin-right: 25px;
+  }
+  .app-bar-mode-change {
+    font-size: 2vh;
+    margin-right: 26px;
+  }
+  .app-bar-mode-change::after {
+    width: 0.2vh;
+    height: 2.6vh;
+    right: -13px;
+    top: -0.3vh;
+  }
+  .app-bar-help {
+    font-size: 2vh;
+  }
+  /* ここまでアップバー */
+
+  /* ここからサイド */
+  #favorite-post-container {
+    margin: 3vh 3vw;
+  }
+  #new-post-container {
+    margin: 3vh 3vw;
+  }
+  /* ここまでサイドバー */
+
+  /* ここからメイン */
+  /* 構成 */
+
+  /* コモンパーツ */
+  ._box-shade {
+    font-size: 3vw;
+    height: 9vw;
+  }
+  ._box-tint {
+    font-size: 3vw;
+    height: 9vw;
+  }
+  ._box-shade h2,
+  ._box-tint h2 {
+    font-size: 3vw;
+  }
+
+  .main-title-box * {
+    font-size: 2.5vw;
+  }
+  .main-title-leading {
+    margin-right: 4vw;
+  }
+  .main-title-leading::after {
+    width: 0.2vw;
+    height: 3.3vw;
+    right: -2vw;
+    top: -0.4vw;
+  }
+  /* ここまでコモンパーツ */
+
+  /* メインの詳細 */
+  /* 推測1段目 */
+
+  /* 推測2段目 */
+  .guess-data-area div ._box-shade {
+    height: 5vw;
+  }
+  .guess-data-area div input {
+    font-size: 2vw;
+  }
+  .guess-data-area div select {
+    font-size: 1vw;
+    font-weight: 900;
+  }
+  .data-number-button,
+  .digit-up-button,
+  .digit-down-button,
+  .numchange-button {
+    height: 2.5vw;
+    min-height: 15px;
+  }
+  .numchange-button {
+    margin-top: 2vh;
+  }
+
+  /* 推測3段目 */
+  /* うち閲覧3段目と共通 */
+  .discription-box h2 {
+    font-size: 2.25vw;
+    padding-bottom: 0;
+  }
+
+  /* 閲覧1段目 */
+
+  /* 閲覧2段目 */
+  .keyword-add-button {
+    height: 4vw;
+  }
+  .year-area h2 {
+    font-size: 3vw;
+  }
+  .good-button,
+  .bad-button {
+    height: 4vw;
+  }
+  .good-button h3,
+  .bad-button h3 {
+    font-size: 1.5vw;
+  }
+
+  /* 閲覧3段目 */
+  .source-button {
+    height: 4vw;
+  }
+  .source-button h3 {
+    font-size: 1.5vw;
+  }
+  /* ここまでメイン詳細 */
+}
+@media (min-aspect-ratio: 12/5) {
+  /* ここからアップバー */
+  .app-bar {
+    height: 4.16vw;
+  }
+  .app-bar-leading h1 {
+    font-size: 2.5vw;
+  }
+  .app-bar-title::after {
+    width: 0.16vw;
+    height: 2.92vw;
+    top: -0.21vw;
+  }
+  .app-bar-leading h3 {
+    font-size: 1.25vw;
+    margin-top: 1.25vw;
+  }
+  .app-bar-mode-change {
+    font-size: 1.25vw;
+  }
+  .app-bar-mode-change::after {
+    width: 0.13vw;
+    height: 1.67vw;
+    top: -0.21vw;
+  }
+  .app-bar-help {
+    font-size: 1.25vw;
+  }
+  /* ここまでアップバー */
+
+  /* ここからサイド */
+  .side-bar {
+    height: 37.5vw;
+  }
+  #favorite-post-container {
+    height: 15vw;
+  }
+  #new-post-container {
+    margin: 1.25vw 4vw;
+    height: 6.25vw;
+  }
+  .line-arrow-in-sidebar {
+    width: 15vw;
+  }
+  .favorite-post::after,
+  .new-post::after {
+    width: 16vw;
+  }
+  .favorite-post {
+    height: 16.66vw;
+  }
+  .ad {
+    height: calc(8.33vw - 30px);
+  }
+  .new-post {
+    height: 12.5vw;
+  }
+  /* ここまでサイドバー */
+
+  /* ここからメイン */
+  /* 構成 */
+  .body {
+    display: flex;
+  }
+  .main {
+    height: 37.5vw;
+  }
+  .main-row {
+    height: 10.42vw;
+    margin-top: 2.08vw;
+  }
+  .main-content-box {
+    height: 8.33vw;
+  }
+  .first-leading::after {
+    height: 10.83vw;
+    top: -1.25vw;
+  }
+  /* ここまで構成 */
+
+  /* コモンパーツ */
+  ._square {
+    max-width: 8.33vw;
+    max-height: 8.33vw;
+  }
+  ._square h3 {
+    font-size: 2.08vw;
+  }
+
+  .square-button-area {
+    height: 8.33vw;
+    margin-bottom: 2.08vw;
+  }
+  /* ここまでコモンパーツ */
+
+  /* メインの詳細 */
+  /* 推測1段目 */
+
+  /* 推測2段目 */
+  .numchange-button {
+    margin-top: 0.83vw;
+  }
+
+  /* 推測3段目 */
+  /* うち閲覧3段目と共通 */
+  ._guess-equation_::after {
+    height: 10.83vw;
+    top: -1.25vw;
+  }
+
+  /* 閲覧1段目 */
+
+  /* 閲覧2段目 */
+  .keyword-add-button {
+    margin-top: 0.83vw;
+  }
+  .good-button,
+  .bad-button {
+    margin-bottom: 0.83vw;
+  }
+
+  /* 閲覧3段目 */
+  .source-button {
+    margin-bottom: 0.83vw;
+  }
+  /* ここまでメイン詳細 */
 }
 </style>
