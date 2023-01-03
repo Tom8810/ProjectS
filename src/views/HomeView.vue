@@ -7,9 +7,11 @@
   <div class="app-bar">
     <div class="app-bar-leading">
       <h1 class="app-bar-title">Guess.</h1>
-      <h1 class="app-bar-mode" v-if="isGuess === true">推測</h1>
-      <h1 class="app-bar-mode" v-else>閲覧</h1>
-      <h3>モード</h3>
+      <div class="app-bar-mode-box">
+        <h1 class="app-bar-mode" v-if="isGuess === true">推測</h1>
+        <h1 class="app-bar-mode" v-else>閲覧</h1>
+        <h3>モード</h3>
+      </div>
     </div>
     <div class="app-bar-end">
       <h3 class="app-bar-mode-change button" v-if="isGuess" @click="changeMode">
@@ -128,17 +130,19 @@
           <div class="main-title-box" v-else>
             <h3 class="main-title-leading">計算結果</h3>
             <h3>Result</h3>
-            <div
-              class="digit-up-button _gradient-button button"
-              @click="digitUp"
-            >
-              <h4>ざっくり表示</h4>
-            </div>
-            <div
-              class="digit-down-button _gradient-button button"
-              @click="digitDown"
-            >
-              <h4>きっちり表示</h4>
+            <div class="digit-button-area">
+              <div
+                class="digit-up-button _gradient-button button"
+                @click="digitUp"
+              >
+                <h4>ざっくり表示</h4>
+              </div>
+              <div
+                class="digit-down-button _gradient-button button"
+                @click="digitDown"
+              >
+                <h4>きっちり表示</h4>
+              </div>
             </div>
           </div>
           <div class="main-content-box guess-data-area" v-if="!isAlreadyGuess">
@@ -148,7 +152,7 @@
                 autocomplete="on"
                 list="data1"
                 id="data-input-1"
-                class="_box-shade"
+                class="_box-shade data-select-box"
                 v-model="firstData"
                 placeholder="データ"
                 @change="changeDisc()"
@@ -183,7 +187,7 @@
                 autocomplete="on"
                 list="data2"
                 id="data-input-2"
-                class="_box-shade"
+                class="_box-shade data-select-box"
                 v-model="secondData"
                 placeholder="データ"
                 @change="changeDisc()"
@@ -218,7 +222,7 @@
                 autocomplete="on"
                 list="data3"
                 id="data-input-3"
-                class="_box-shade"
+                class="_box-shade data-select-box"
                 v-model="thirdData"
                 placeholder="データ"
                 @change="changeDisc()"
@@ -309,7 +313,10 @@
             </div>
           </div>
         </div>
-        <div class="first-end main-box">
+        <div
+          class="first-end main-box"
+          v-if="isAlreadyShow || searchStyle === `sort`"
+        >
           <div
             class="main-title-box"
             v-if="!isAlreadyShow && searchStyle === `sort`"
@@ -361,17 +368,19 @@
           <div class="main-title-box" v-if="isAlreadyShow">
             <h3 class="main-title-leading">データ</h3>
             <h3>Result</h3>
-            <div
-              class="digit-up-button _gradient-button button"
-              @click="digitUp"
-            >
-              <h4>ざっくり表示</h4>
-            </div>
-            <div
-              class="digit-down-button _gradient-button button"
-              @click="digitDown"
-            >
-              <h4>きっちり表示</h4>
+            <div class="digit-button-area">
+              <div
+                class="digit-up-button _gradient-button button"
+                @click="digitUp"
+              >
+                <h4>ざっくり表示</h4>
+              </div>
+              <div
+                class="digit-down-button _gradient-button button"
+                @click="digitDown"
+              >
+                <h4>きっちり表示</h4>
+              </div>
             </div>
           </div>
           <div
@@ -407,7 +416,7 @@
             </div>
             <div id="sort-keyword-box"></div>
           </div>
-          <div class="main-content-box" v-if="isAlreadyShow">
+          <div class="main-content-box view-result-area" v-if="isAlreadyShow">
             <div class="_box-tint result-data">
               <h2>
                 {{ roundedResult
@@ -652,6 +661,7 @@ export default {
           const start = document.getElementById("start");
           start.classList.add("hidden");
           this.isAlreadyStarted = true;
+          let isPhone = window.matchMedia(`(max-width: 450px)`).matches;
           const snapshot = await getDoc(doc(db, "data", "overView"));
           snapshot.data().index.forEach((e) => {
             this.data.push(e);
@@ -684,10 +694,17 @@ export default {
               "style",
               "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: max(10vh, 4.17vw); display: flex; align-items: center; justify-content: center;"
             );
-            favDataText.setAttribute(
-              "style",
-              "font-size: max(1.5vw, 12px); line-height: 1.5;"
-            );
+            if (isPhone) {
+              favDataText.setAttribute(
+                "style",
+                "font-size: 2vh; line-height: 1.5;"
+              );
+            } else {
+              favDataText.setAttribute(
+                "style",
+                "font-size: max(1.5vw, 12px); line-height: 1.5;"
+              );
+            }
             if (e.data().title.toString().length >= 15) {
               favDataText.textContent = this.omit(e.data().title, 14);
             } else {
@@ -713,10 +730,17 @@ export default {
             "style",
             "border: solid 0.1vw #000000; padding: 0.7vw; width: 100%; height: max(10vh, 4.17vw); display: flex; align-items: center; justify-content: center;"
           );
-          newDataText.setAttribute(
-            "style",
-            "font-size: max(1.5vw, 12px); line-height: 1.5;"
-          );
+          if (isPhone) {
+            newDataText.setAttribute(
+              "style",
+              "font-size: 2vh; line-height: 1.5;"
+            );
+          } else {
+            newDataText.setAttribute(
+              "style",
+              "font-size: max(1.5vw, 12px); line-height: 1.5;"
+            );
+          }
           const newQ = query(this.commonLef, orderBy("date", "desc"), limit(1));
           const ne = await getDocs(newQ);
           ne.forEach(async (e) => {
@@ -1552,7 +1576,6 @@ export default {
         }
         dataInput.type = "number";
         dataInput.placeholder = "数値";
-        numChangeText.style.fontSize = "1.2vw";
         numChangeText.textContent = "データを選択";
       } else {
         const datalist = document.getElementById(`data${n}`);
@@ -1564,7 +1587,6 @@ export default {
         });
         dataInput.type = "text";
         dataInput.placeholder = "データ";
-        numChangeText.style.fontSize = "1.2vw";
         numChangeText.textContent = "数値を入力";
       }
     },
@@ -1802,39 +1824,8 @@ export default {
     },
     goKeywordSort() {
       const sortKeywordBox = document.getElementById("sort-keyword-box");
-      this.sortCondition.push(this.sortKeyword);
-      this.sortData = this.data;
-      this.sortCondition.forEach((e) => {
-        this.sortData = this.sortData.filter((ele) => {
-          return ele.title.includes(e);
-        });
-      });
-      this.runSort();
-      const container = document.createElement("div");
-      container.setAttribute(
-        "style",
-        "display: flex;flex-direction: column;justify-content: center;align-items: center;width: 12vw;margin-left: 2vw;"
-      );
-      const sortNameBox = document.createElement("div");
-      const sortName = document.createElement("h2");
-      sortNameBox.setAttribute(
-        "style",
-        "display: flex;justify-content: center;align-items: center;font-weight: 700;font-size: 2vw;height: 6vw;max-height: 8vh;padding: 1vw;border-radius: 5px;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #cccccc, #7aaecc);width: 100%;box-sizing: border-box;"
-      );
-      sortName.setAttribute("style", "font-size: 2vw;display: block;");
-      const sortDeleteButton = document.createElement("div");
-      const sortDeleteButtonText = document.createElement("h4");
-      sortName.textContent = this.sortKeyword;
-      sortDeleteButtonText.textContent = "削除";
-      sortDeleteButtonText.setAttribute(
-        "style",
-        "display: block;font-size: 1.2vw;"
-      );
-      sortDeleteButton.onclick = () => {
-        let deleteEle = sortName.textContent;
-        this.sortCondition = this.sortCondition.filter((e) => {
-          return e !== deleteEle;
-        });
+      if (sortKeywordBox.childElementCount <= 2) {
+        this.sortCondition.push(this.sortKeyword);
         this.sortData = this.data;
         this.sortCondition.forEach((e) => {
           this.sortData = this.sortData.filter((ele) => {
@@ -1842,20 +1833,62 @@ export default {
           });
         });
         this.runSort();
-        while (container.lastChild) {
-          container.lastChild.remove();
+        const container = document.createElement("div");
+        container.setAttribute(
+          "style",
+          "display: flex;flex-direction: column;justify-content: center;align-items: center;width: 12vw;margin-left: 2vw;"
+        );
+        const sortNameBox = document.createElement("div");
+        const sortName = document.createElement("h2");
+        sortNameBox.setAttribute(
+          "style",
+          "display: flex;justify-content: center;align-items: center;font-weight: 700;font-size: 2vw;height: 6vw;max-height: 8vh;padding: 1vw;border-radius: 5px;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #cccccc, #7aaecc);width: 100%;box-sizing: border-box;"
+        );
+        sortName.setAttribute("style", "font-size: 2vw;display: block;");
+        const sortDeleteButton = document.createElement("div");
+        const sortDeleteButtonText = document.createElement("h4");
+        sortName.textContent = this.sortKeyword;
+        sortDeleteButtonText.textContent = "削除";
+        sortDeleteButtonText.setAttribute(
+          "style",
+          "display: block;font-size: 1.2vw;"
+        );
+        sortDeleteButton.onclick = () => {
+          let deleteEle = sortName.textContent;
+          this.sortCondition = this.sortCondition.filter((e) => {
+            return e !== deleteEle;
+          });
+          this.sortData = this.data;
+          this.sortCondition.forEach((e) => {
+            this.sortData = this.sortData.filter((ele) => {
+              return ele.title.includes(e);
+            });
+          });
+          this.runSort();
+          const deleteCard = sortDeleteButton.parentNode;
+          deleteCard.remove();
+        };
+        if (window.matchMedia(`(max-width: 450px)`).matches) {
+          sortDeleteButton.setAttribute(
+            "style",
+            "display: flex;align-items: center;justify-content: center;width: 10vw;margin-top: 2vh;height: 5vw;min-height: 15px;font-weight: 700;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #ffff00, #99daff);box-sizing: border-box;"
+          );
+        } else {
+          sortDeleteButton.setAttribute(
+            "style",
+            "display: flex;align-items: center;justify-content: center;width: 6vw;margin-top: 2vh;height: 3vw;min-height: 15px;font-weight: 700;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #ffff00, #99daff);box-sizing: border-box;"
+          );
         }
-      };
-      sortDeleteButton.setAttribute(
-        "style",
-        "display: flex;align-items: center;justify-content: center;width: 6vw;margin-top: 2vh;height: 3vw;min-height: 15px;font-weight: 700;border: solid #000 1.5px;box-shadow: 2px 2px 5px #3c3c3c;background: linear-gradient(to right, #ffff00, #99daff);box-sizing: border-box;"
-      );
-      sortDeleteButton.setAttribute("class", "button");
-      this.sortKeyword = "";
-      sortNameBox.append(sortName);
-      sortDeleteButton.append(sortDeleteButtonText);
-      container.append(sortNameBox, sortDeleteButton);
-      sortKeywordBox.appendChild(container);
+        sortDeleteButton.setAttribute("class", "button");
+        this.sortKeyword = "";
+        sortNameBox.append(sortName);
+        sortDeleteButton.append(sortDeleteButtonText);
+        container.append(sortNameBox, sortDeleteButton);
+        sortKeywordBox.appendChild(container);
+      } else {
+        alert("これ以上キーワードを増やせません。");
+        this.sortKeyword = "";
+      }
     },
     goGenreSort() {
       let prefBool = (e) => {
@@ -2132,6 +2165,7 @@ export default {
   align-items: center;
 }
 .start-button-box {
+  background-color: rgba(256, 256, 256, 0.5);
   width: 30vw;
   height: 14vw;
   border: 0.5vw solid;
@@ -2534,6 +2568,9 @@ export default {
   margin-left: auto;
   margin-right: auto;
 }
+.digit-button-area {
+  display: flex;
+}
 .data-number-button {
   width: 100px;
 }
@@ -2696,7 +2733,7 @@ export default {
 /* 開発用 */
 .dev {
   position: fixed;
-  z-index: 3;
+  z-index: 4;
   top: 50px;
   left: 50px;
 }
@@ -3012,5 +3049,461 @@ export default {
     margin-bottom: 0.83vw;
   }
   /* ここまでメイン詳細 */
+}
+@media (max-width: 450px) {
+  /* ここからスタート */
+  .start-background-text h1 {
+    font-size: 34vh;
+    transform: rotate(90deg);
+  }
+  .start-foreground-text h1 {
+    font-weight: 900;
+    font-size: 23vw;
+    left: 5vw;
+    bottom: 11vh;
+  }
+  .lineArrow {
+    top: 34vh;
+    left: 10vw;
+    width: 90vw;
+  }
+  .start-button-area {
+    height: 35vh;
+    bottom: 10vh;
+  }
+  .start-button-box {
+    background-color: rgba(256, 256, 256, 0.5);
+    width: 42vw;
+    height: 24vw;
+  }
+  .start-button-box h1 {
+    font-size: 7.5vw;
+    margin-top: 4vw;
+    margin-left: 3vw;
+  }
+  .start-button-box h3 {
+    font-size: 4vw;
+    margin-top: 4vw;
+  }
+  .line-arrow-in-box {
+    margin-top: 2vw;
+    margin-left: 1.5vw;
+    width: 38vw;
+  }
+  /* ここまでスタート */
+
+  /* ここからアップバー */
+  .app-bar {
+    position: fixed;
+    top: 0;
+    width: 100vw;
+    z-index: 3;
+  }
+  .app-bar-leading {
+    flex-direction: column;
+    height: 10vh;
+    justify-content: flex-start;
+  }
+  .app-bar-mode-box * {
+    display: inline-block;
+  }
+  .app-bar-leading {
+    margin-left: 5vw;
+  }
+  .app-bar-leading h1 {
+    font-size: 3vh;
+  }
+  .app-bar-title {
+    margin-top: 1vh;
+  }
+  .app-bar-mode {
+    margin-left: 0;
+    margin-top: 2vh;
+  }
+  .app-bar-mode-box h3 {
+    font-size: 2vw;
+  }
+  .app-bar-title::after {
+    width: 13vh;
+    height: 0.2vh;
+    left: -1vw;
+    top: 4vh;
+  }
+  .app-bar-mode-change {
+    font-size: 2vh;
+    margin-right: 0;
+  }
+  .app-bar-mode-change::after {
+    display: none;
+  }
+  .app-bar-mode-change::after:hover {
+    transform: scale(1);
+  }
+  .app-bar-help {
+    display: none;
+  }
+  /* ここまでアップバー */
+
+  /* ここからサイド */
+  .side-bar {
+    background: linear-gradient(#ffffff, #99daff);
+    height: 90vh;
+    width: 86vw;
+    padding: 0 7vw 0 7vw;
+  }
+  .sidebar-title-box {
+    margin-left: 0;
+  }
+  .line-arrow-in-sidebar {
+    width: 50vw;
+    height: 1.5vw;
+    border-bottom: 0.4vw solid #000;
+    border-right: 0.7vw solid #000;
+    margin-left: -1vw;
+  }
+  .sidebar-title-leading {
+    font-size: 5vw;
+    margin-right: 5vw;
+    font-weight: 700;
+  }
+  .sidebar-title-leading::after {
+    width: 0.3vw;
+    height: 6vw;
+    right: -2.7vw;
+    top: -0.5vw;
+  }
+  .sidebar-title-end {
+    font-size: 5vw;
+    font-weight: 700;
+  }
+  .favorite-post {
+    height: 40vh;
+    margin-top: 15px;
+    position: relative;
+  }
+  #favorite-post-container {
+    height: 35vh;
+    margin: 0 4vw;
+    justify-content: space-evenly;
+  }
+  .new-post {
+    height: 24.5vh;
+    margin-top: 15px;
+    position: relative;
+  }
+  .favorite-post::after,
+  .new-post::after {
+    width: 94vw;
+    height: 0.15vw;
+    left: -4vw;
+  }
+  .ad {
+    height: calc(25.5vh - 30px);
+  }
+  /* ここまでサイドバー */
+
+  /* ここからメイン */
+  /* 構成 */
+  .body {
+    flex-direction: column-reverse;
+    margin-top: 10vh;
+  }
+  .main {
+    width: 100vw;
+    height: 100%;
+  }
+  .main-row {
+    flex-direction: column;
+    padding-left: 7vw;
+    padding-right: 7vw;
+    margin-top: 0;
+    height: 100%;
+  }
+  .main-row:first-child::after,
+  .main-row:nth-child(2)::after {
+    display: none;
+  }
+  .main-box {
+    margin-top: 5vh;
+  }
+  .main-box::before {
+    content: "";
+    display: block;
+    width: 94vw;
+    height: 0.15vw;
+    background-color: #000;
+    position: absolute;
+    bottom: -1.5vh;
+    left: -4vw;
+  }
+  .main-content-box {
+    height: 12vh;
+    display: flex;
+    align-items: center;
+  }
+  .first-leading {
+    margin-right: 0;
+    width: 100%;
+  }
+  .first-leading::after {
+    display: none;
+  }
+  .first-end {
+    width: 100%;
+  }
+  .after-guess {
+    width: 100%;
+  }
+  /* ここまで構成 */
+
+  /* コモンパーツ */
+  ._box-shade {
+    font-size: 2vh;
+    height: 6vh;
+    padding: 1vh;
+  }
+  ._box-tint {
+    font-size: 2vh;
+    height: 6vh;
+    padding: 1vh;
+  }
+  ._box-shade h2,
+  ._box-tint h2 {
+    font-size: 2vh;
+  }
+  ._square {
+    width: 60vw;
+    height: 6vh;
+    max-width: none;
+    max-height: none;
+  }
+  ._square h3 {
+    font-size: 3vh;
+  }
+
+  .main-title-box * {
+    font-size: 5vw;
+  }
+  .main-title-leading {
+    margin-right: 5vw;
+  }
+  .main-title-leading::after {
+    width: 0.3vw;
+    height: 6vw;
+    right: -2.7vw;
+    top: -0.5vw;
+  }
+  .square-button-area {
+    width: 100%;
+    height: 20vh;
+    margin-bottom: 0;
+  }
+  /* ここまでコモンパーツ */
+
+  /* メインの詳細 */
+  /* 推測1段目 */
+  .guess-title-area {
+    width: 100%;
+  }
+
+  /* 推測2段目 */
+  .guess-data-area {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 50vw;
+    margin-bottom: 3vh;
+  }
+  .guess-data-area div ._box-shade {
+    height: 6vh;
+    min-height: auto;
+  }
+  .guess-data-area div input {
+    padding: 1.5vw;
+    width: 50vw;
+    font-size: 1.5vh;
+    margin-top: 3vh;
+  }
+  .guess-data-area div select {
+    margin: 0;
+    margin-top: 3vh;
+    width: 6vh;
+    height: 6vh;
+    font-size: 4vh;
+    font-weight: 200;
+  }
+  .first-data-area,
+  .second-data-area,
+  .third-data-area {
+    position: relative;
+  }
+  .data-number-button,
+  .digit-up-button,
+  .digit-down-button,
+  .numchange-button {
+    width: 25vw;
+    margin-left: 10vw;
+    height: 6vw;
+    min-height: auto;
+  }
+  .data-number-button h4,
+  .digit-up-button h4,
+  .digit-down-button h4,
+  .numchange-button h4 {
+    font-size: 3vw;
+  }
+  .digit-down-button {
+    margin-top: 20px;
+  }
+  .digit-button-area {
+    flex-direction: column;
+  }
+  .data-number-button {
+    width: 30vw;
+  }
+  .numchange-button {
+    position: absolute;
+    right: -34vw;
+    top: calc(6vh - 3vw);
+    margin: 0;
+  }
+  /* うち閲覧2段目と共通 */
+  .result-data {
+    width: 86vw;
+  }
+  .result-data-unit {
+    margin-left: 1vw;
+    font-size: 1vw;
+  }
+
+  /* 推測3段目 */
+  /* うち閲覧3段目と共通 */
+  .discription-box {
+    min-height: auto;
+    height: 8vh;
+  }
+  .discription-box h2 {
+    font-size: 1.5vh;
+    margin-bottom: 0;
+  }
+  ._guess-equation_ {
+    width: 86vw;
+    margin-right: 0;
+  }
+  ._guess-equation_::after {
+    display: none;
+  }
+  .discription {
+    width: 82vw;
+  }
+
+  /* 閲覧1段目 */
+
+  /* 閲覧2段目 */
+  .second-leading {
+    width: 86vw;
+  }
+  .genre-box {
+    width: 86vw;
+  }
+  .keyword-box {
+    width: 26vw;
+    font-size: 1.8vh;
+  }
+  .keyword-add-button {
+    width: 10vw;
+    margin-left: 4vw;
+    height: 3vh;
+    margin-top: 0;
+  }
+  .keyword-add-button h4 {
+    font-size: 1.5vh;
+  }
+  #sort-keyword-box {
+    width: 42vw;
+    margin-left: 4vw;
+  }
+  .view-result-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 3vh;
+    margin-bottom: 3vh;
+  }
+  .review-button-area,
+  .year-area {
+    width: 86vw;
+    margin-left: 0;
+    margin-top: 3vh;
+  }
+  .year-area h2 {
+    font-size: 2vh;
+    text-align: right;
+  }
+  .review-button-area {
+    display: flex;
+    justify-content: space-evenly;
+  }
+  .good-button,
+  .bad-button {
+    width: 30vw;
+    margin: 0;
+    height: 4vh;
+    min-height: auto;
+  }
+  .good-button h3,
+  .bad-button h3 {
+    font-size: 1.5vh;
+  }
+
+  /* 閲覧3段目 */
+  .source-area {
+    display: flex;
+    justify-content: space-evenly;
+  }
+  .source-button {
+    width: 32vw;
+    margin: 0;
+    height: 3vh;
+    min-height: auto;
+  }
+  .source-button h3 {
+    display: block;
+  }
+  .parent {
+    text-decoration: underline;
+    color: #00a3ff;
+    cursor: pointer;
+  }
+  /* ここまでメイン詳細 */
+
+  /* ヘルプ関連 */
+  .help-shadow {
+    background-color: #333333;
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 100vw;
+    height: 100vh;
+    transition-duration: 1s;
+  }
+  .help-box {
+    position: relative;
+    z-index: 0;
+  }
+  .help {
+    display: none;
+    position: relative;
+    background-color: #dddddd;
+    opacity: 0;
+    z-index: -1;
+    transition-duration: 1s;
+  }
+
+  .data-area {
+    display: none;
+  }
 }
 </style>
