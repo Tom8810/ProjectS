@@ -1,9 +1,4 @@
 <template>
-  <div class="dev">
-    <button @click="goDev">dev</button>
-    <button @click="test_auto">自動</button>
-  </div>
-  <div class="help-shadow"></div>
   <div class="app-bar">
     <div class="app-bar-leading">
       <h1 class="app-bar-title">Guess.</h1>
@@ -20,7 +15,7 @@
       <h3 class="app-bar-mode-change button" v-else @click="changeMode">
         推測モードへ
       </h3>
-      <h3 @click="help" class="app-bar-help button">Help</h3>
+      <h3 @click="help" class="app-bar-help button">{{ helpText }}</h3>
     </div>
   </div>
   <div class="body">
@@ -72,6 +67,11 @@
         </div>
       </div>
     </div>
+    <div class="floating-help-button" @click="help">
+      <h2>?</h2>
+      <h3 v-if="ishelp">オン</h3>
+      <h3 v-else>オフ</h3>
+    </div>
     <!-- ここから推測 -->
     <div class="main" :style="{ display: guesser }">
       <div class="main-row">
@@ -83,11 +83,16 @@
           <div class="main-content-box" v-if="!isAlreadyGuess">
             <input
               type="text"
-              class="_box-shade"
+              class="_box-shade help-at"
               placeholder="テーマを入力"
               v-model="title"
               @change="changeDisc()"
+              @mouseover="hover"
+              @mouseleave="leave"
             />
+            <div class="help-content under">
+              <h3>推測したい内容を入力します。</h3>
+            </div>
           </div>
           <div class="main-content-box guess-title-area" v-else>
             <div class="_box-tint">
@@ -104,10 +109,15 @@
           <div class="main-content-box">
             <input
               type="text"
-              class="_box-shade"
+              class="_box-shade help-at"
               placeholder="単位を入力"
               v-model="unit"
+              @mouseover="hover"
+              @mouseleave="leave"
             />
+            <div class="help-content under">
+              <h3>推測結果の単位を入力します。</h3>
+            </div>
           </div>
         </div>
       </div>
@@ -147,17 +157,24 @@
           </div>
           <div class="main-content-box guess-data-area" v-if="!isAlreadyGuess">
             <div class="first-data-area">
-              <input
-                type="text"
-                autocomplete="on"
-                list="data1"
-                id="data-input-1"
-                class="_box-shade data-select-box"
-                v-model="firstData"
-                placeholder="データ"
-                @change="changeDisc()"
-              />
-              <datalist id="data1"> </datalist>
+              <div class="help-at">
+                <input
+                  type="text"
+                  autocomplete="on"
+                  list="data1"
+                  id="data-input-1"
+                  class="_box-shade data-select-box"
+                  v-model="firstData"
+                  placeholder="データ"
+                  @change="changeDisc()"
+                  @mouseover="hover"
+                  @mouseleave="leave"
+                />
+                <div class="help-content help-input">
+                  <h3>一つ目のデータを入力します。</h3>
+                </div>
+                <datalist id="data1"> </datalist>
+              </div>
               <div
                 class="numchange-button button _gradient-button"
                 @click="
@@ -169,30 +186,44 @@
               </div>
             </div>
             <div class="ope-area">
-              <select
-                name="post-particle"
-                class="_box-shade"
-                v-model="operator"
-                @change="changeDisc()"
-              >
-                <option value="+">+</option>
-                <option value="-">-</option>
-                <option value="×">×</option>
-                <option value="÷">÷</option>
-              </select>
+              <div class="help-at">
+                <select
+                  name="post-particle"
+                  class="_box-shade"
+                  v-model="operator"
+                  @change="changeDisc()"
+                  @mouseover="hover"
+                  @mouseleave="leave"
+                >
+                  <option value="+">+</option>
+                  <option value="-">-</option>
+                  <option value="×">×</option>
+                  <option value="÷">÷</option>
+                </select>
+                <div class="help-content help-input">
+                  <h3>一つ目の記号を選択します。</h3>
+                </div>
+              </div>
             </div>
             <div class="second-data-area">
-              <input
-                type="text"
-                autocomplete="on"
-                list="data2"
-                id="data-input-2"
-                class="_box-shade data-select-box"
-                v-model="secondData"
-                placeholder="データ"
-                @change="changeDisc()"
-              />
-              <datalist id="data2"> </datalist>
+              <div class="help-at">
+                <input
+                  type="text"
+                  autocomplete="on"
+                  list="data2"
+                  id="data-input-2"
+                  class="_box-shade data-select-box"
+                  v-model="secondData"
+                  placeholder="データ"
+                  @change="changeDisc()"
+                  @mouseover="hover"
+                  @mouseleave="leave"
+                />
+                <div class="help-content help-input">
+                  <h3>二つ目のデータを入力します。</h3>
+                </div>
+                <datalist id="data2"> </datalist>
+              </div>
               <div
                 class="numchange-button button _gradient-button"
                 @click="
@@ -204,31 +235,45 @@
               </div>
             </div>
             <div class="ope-area" v-if="howManyData === 3">
-              <select
-                name="post-particle"
-                class="_box-shade"
-                v-model="operator2"
-                @change="changeDisc()"
-              >
-                <option value="+">+</option>
-                <option value="-">-</option>
-                <option value="×">×</option>
-                <option value="÷">÷</option>
-              </select>
+              <div class="help-at">
+                <select
+                  name="post-particle"
+                  class="_box-shade"
+                  v-model="operator2"
+                  @change="changeDisc()"
+                  @mouseover="hover"
+                  @mouseleave="leave"
+                >
+                  <option value="+">+</option>
+                  <option value="-">-</option>
+                  <option value="×">×</option>
+                  <option value="÷">÷</option>
+                </select>
+                <div class="help-content help-input">
+                  <h3>二つ目の記号を選択します。</h3>
+                </div>
+              </div>
             </div>
             <div class="third-data-area" v-if="howManyData === 3">
-              <input
-                type="text"
-                autocomplete="on"
-                list="data3"
-                id="data-input-3"
-                class="_box-shade data-select-box"
-                v-model="thirdData"
-                placeholder="データ"
-                @change="changeDisc()"
-                @mouseover.once="thirdStart"
-              />
-              <datalist id="data3"> </datalist>
+              <div class="help-at">
+                <input
+                  type="text"
+                  autocomplete="on"
+                  list="data3"
+                  id="data-input-3"
+                  class="_box-shade data-select-box"
+                  v-model="thirdData"
+                  placeholder="データ"
+                  @change="changeDisc()"
+                  @mouseover.once="thirdStart"
+                  @mouseover="hover"
+                  @mouseleave="leave"
+                />
+                <div class="help-content help-input">
+                  <h3>三つ目のデータを入力します。</h3>
+                </div>
+                <datalist id="data3"> </datalist>
+              </div>
               <div
                 class="numchange-button button _gradient-button"
                 @click="
@@ -298,14 +343,19 @@
           </div>
           <div class="main-content-box" v-if="!isAlreadyShow">
             <select
-              class="_box-shade"
+              class="_box-shade help-at"
               placeholder="検索方法を選択"
               v-model="searchStyle"
               @change="sortInit"
+              @mouseover="hover"
+              @mouseleave="leave"
             >
               <option value="input" selected>直接入力検索</option>
               <option value="sort">絞り込み検索</option>
             </select>
+            <div class="help-content under">
+              <h3>検索方法を選択します。</h3>
+            </div>
           </div>
           <div class="main-content-box" v-else>
             <div class="_box-tint">
@@ -333,14 +383,19 @@
             v-if="!isAlreadyShow && searchStyle === `sort`"
           >
             <select
-              class="_box-shade"
+              class="_box-shade help-at"
               placeholder="絞り込み方法を選択"
               v-model="sortStyle"
               @change="sortInit"
+              @mouseover="hover"
+              @mouseleave="leave"
             >
               <option value="genre">ジャンル</option>
               <option value="keyword">キーワード</option>
             </select>
+            <div class="help-content under">
+              <h3>絞り込み方法を選択します。</h3>
+            </div>
           </div>
           <div class="main-content-box" v-if="isAlreadyShow">
             <div class="_box-tint">
@@ -387,27 +442,41 @@
             class="main-content-box"
             v-if="!isAlreadyShow && sortStyle === `genre`"
           >
-            <select
-              class="_box-shade genre-box"
-              placeholder="ジャンルを選択"
-              v-model="sortGenre"
-              @change="goGenreSort"
-            >
-              <option value="pref">都道府県データ</option>
-              <option value="population">人口データ</option>
-              <option value="per">一人当たりデータ</option>
-            </select>
+            <div class="help-at">
+              <select
+                class="_box-shade genre-box"
+                placeholder="ジャンルを選択"
+                v-model="sortGenre"
+                @change="goGenreSort"
+                @mouseover="hover"
+                @mouseleave="leave"
+              >
+                <option value="pref">都道府県データ</option>
+                <option value="population">人口データ</option>
+                <option value="per">一人当たりデータ</option>
+              </select>
+              <div class="help-content help-input">
+                <h3>絞り込むジャンルを選択します。</h3>
+              </div>
+            </div>
           </div>
           <div
             class="main-content-box"
             v-if="!isAlreadyShow && sortStyle === `keyword`"
           >
-            <input
-              type="text"
-              class="_box-shade keyword-box"
-              placeholder="キーワード"
-              v-model="sortKeyword"
-            />
+            <div class="help-at">
+              <input
+                type="text"
+                class="_box-shade keyword-box"
+                placeholder="キーワード"
+                v-model="sortKeyword"
+                @mouseover="hover"
+                @mouseleave="leave"
+              />
+              <div class="help-content help-input">
+                <h3>キーワードを入力し、追加ボタンを押します。</h3>
+              </div>
+            </div>
             <div
               class="keyword-add-button _gradient-button button"
               @click="goKeywordSort"
@@ -464,11 +533,16 @@
           <div class="main-content-box" v-if="!isAlreadyShow">
             <input
               type="text"
-              class="_box-shade"
+              class="_box-shade help-at"
               v-model="searchText"
               autocomplete="on"
               list="search-result-box"
+              @mouseover="hover"
+              @mouseleave="leave"
             />
+            <div class="help-content over">
+              <h3>閲覧するデータを選択します。</h3>
+            </div>
             <datalist id="search-result-box"></datalist>
           </div>
           <div
@@ -556,9 +630,8 @@ export default {
       isGuess: true,
       isAlreadyGuess: false,
       isAlreadyShow: false,
-      ishelp: false,
-      helpIndex: 0,
-      helpDeleteIndex: -1,
+      ishelp: true,
+      helpText: "ガイドOFFにする",
       guesser: "block",
       viewer: "none",
       commonLef: collection(db, "data"),
@@ -590,7 +663,7 @@ export default {
       secondData: "",
       thirdData: "",
       discription: "",
-      intResult: 0,
+      adjustedResult: 0,
       digit: 0,
       roundDigit: 0,
       digitUnitCoeff: 0,
@@ -762,36 +835,77 @@ export default {
         }
       },
       round: function () {
-        if (this.result >= 1000) {
+        if (Number.isInteger(this.adjustedResult)) {
           this.roundedResult =
-            Math.round(this.intResult / 10 ** this.roundDigit) *
+            Math.round(this.adjustedResult / 10 ** this.roundDigit) *
             10 ** this.roundDigit;
         } else {
-          if (this.result.toString().length >= 5) {
-            this.roundedResult =
-              Math.round(this.result * 10 ** (-1 * this.roundDigit)) /
-              10 ** (-1 * this.roundDigit);
-          } else {
-            this.roundedResult = this.result;
-          }
+          let diff =
+            this.adjustedResult.toString().split(".")[1].length -
+            this.roundDigit;
+          this.roundedResult =
+            Math.round(this.adjustedResult * 10 ** diff) / 10 ** diff;
         }
         if (this.digit >= 5) {
-          if (this.digitUnitCoeff <= this.roundDigit) {
-            switch (this.digitUnitCoeff) {
-              case 4:
-                this.roundedResult = this.roundedResult / 10 ** 4 + "万";
-                break;
-              case 8:
-                this.roundedResult = this.roundedResult / 10 ** 8 + "億";
-                break;
-              case 12:
-                this.roundedResult = this.roundedResult / 10 ** 12 + "兆";
-                break;
-              case 16:
-                this.roundedResult = this.roundedResult / 10 ** 16 + "京";
-                break;
-              default:
-                this.roundedResult = this.roundedResult / 10 ** 20 + "垓";
+          if (this.digitUnitCoeff >= 4) {
+            let getFraction = (e, n) => {
+              let i = Math.round(
+                (e / 10 ** n - Math.floor(e / 10 ** n)) * 10 ** 4
+              );
+              let result = "";
+              if (i !== 0) {
+                switch (this.digitUnitCoeff) {
+                  case 4:
+                    result = i;
+                    break;
+                  case 8:
+                    result = i + "万";
+                    break;
+                  case 12:
+                    result = i + "億";
+                    break;
+                  case 16:
+                    result = i + "兆";
+                    break;
+                  default:
+                    result = i + "京";
+                    break;
+                }
+              }
+              return result;
+            };
+            if (this.degree >= 2) {
+              switch (this.digitUnitCoeff) {
+                case 4:
+                  if (getFraction(this.roundedResult, 4) === "") {
+                    this.roundedResult =
+                      Math.trunc(this.roundedResult / 10 ** 4) + "万";
+                  }
+                  break;
+                case 8:
+                  this.roundedResult =
+                    Math.trunc(this.roundedResult / 10 ** 8) +
+                    "億" +
+                    getFraction(this.roundedResult, 8);
+                  break;
+                case 12:
+                  this.roundedResult =
+                    Math.trunc(this.roundedResult / 10 ** 12) +
+                    "兆" +
+                    getFraction(this.roundedResult, 12);
+                  break;
+                case 16:
+                  this.roundedResult =
+                    Math.trunc(this.roundedResult / 10 ** 16) +
+                    "京" +
+                    getFraction(this.roundedResult, 16);
+                  break;
+                default:
+                  this.roundedResult =
+                    Math.trunc(this.roundedResult / 10 ** 20) +
+                    "垓" +
+                    getFraction(this.roundedResult, 20);
+              }
             }
           }
         }
@@ -1379,16 +1493,65 @@ export default {
       },
       processShowingData: function () {
         this.result = this.showingData.latest;
-        this.intResult = Math.round(this.showingData.latest);
-        this.digit = this.intResult.toString().length;
-        this.digitUnitCoeff = 0;
-        if (this.result >= 1000) {
-          this.roundDigit = this.digit - 2;
-          while (this.digitUnitCoeff < this.digit - 4) {
-            this.digitUnitCoeff = this.digitUnitCoeff + 4;
+        this.adjustedResult = this.result;
+        this.degree = this.showingData.degree;
+        if (Number.isInteger(this.result)) {
+          this.digit = this.result.toString().length;
+          if (this.digit >= 6) {
+            if (this.showingData.degree !== 1) {
+              this.adjustedResult =
+                Math.round(this.result / 10 ** (this.digit - 5)) *
+                10 ** (this.digit - 5);
+            }
+            this.roundDigit = this.digit - 2;
+          } else {
+            if (this.digit <= 2) {
+              this.roundDigit = 0;
+            } else {
+              this.roundDigit = this.digit - 2;
+            }
           }
         } else {
-          this.roundDigit = this.digit - 3;
+          this.digit = this.result.toString().length - 1;
+          if (this.digit >= 6) {
+            if (this.showingData.degree !== 1) {
+              if (this.result > 10000) {
+                let count = 0;
+                while (this.adjustedResult > 100000) {
+                  this.adjustedResult = this.adjustedResult / 10;
+                  count = count + 1;
+                }
+                this.adjustedResult =
+                  Math.round(this.adjustedResult) * 10 ** count;
+                this.digit = 5 + count;
+              } else {
+                let count = 0;
+                while (this.adjustedResult < 10000) {
+                  this.adjustedResult = this.adjustedResult * 10;
+                  count = count + 1;
+                }
+                this.adjustedResult =
+                  Math.round(this.adjustedResult) / 10 ** count;
+                this.digit = 5;
+              }
+            }
+            this.roundDigit = this.digit - 2;
+          } else {
+            this.adjustedResult = this.result;
+            if (this.digit <= 2) {
+              this.roundDigit = 0;
+            } else {
+              this.roundDigit = this.digit - 2;
+            }
+          }
+        }
+        this.digitUnitCoeff = 0;
+        let unitCheck = this.result;
+        if (!Number.isInteger(unitCheck)) {
+          unitCheck = Math.round(unitCheck);
+        }
+        while (this.digitUnitCoeff < unitCheck.toString().length - 4) {
+          this.digitUnitCoeff = this.digitUnitCoeff + 4;
         }
         this.round();
       },
@@ -1414,24 +1577,6 @@ export default {
         } else {
           alert("データを選択してください");
         }
-      },
-      goHelp: () => {
-        const helpBoxes = document.querySelectorAll(".help-box");
-        const helps = document.querySelectorAll(".help");
-        if (helps[this.helpDeleteIndex] && helpBoxes[this.helpDeleteIndex]) {
-          const changeBox = helpBoxes[this.helpDeleteIndex];
-          const deleteCard = helps[this.helpDeleteIndex];
-          deleteCard.style.display = "none";
-          deleteCard.style.opacity = 0;
-          deleteCard.style.zIndex = -1;
-          changeBox.style.zIndex = 0;
-        }
-        const changebox = helpBoxes[this.helpIndex];
-        const card = helps[this.helpIndex];
-        card.style.display = "block";
-        card.style.opacity = 1;
-        card.style.zIndex = 2;
-        changebox.style.zIndex = 2;
       },
       omit: (e, num) => {
         // eはカットする文字列、numはその字数以下にしたい文字数
@@ -1473,17 +1618,16 @@ export default {
       this.appendDataInSearchBox();
     },
     addData() {
-      const dataNumberButton = document.getElementById("data-number-button");
+      const dataNumberButton =
+        document.getElementById("data-number-button").firstElementChild;
       if (this.howManyData === 2) {
         this.thirdData = "";
         this.operator2 = "";
         this.howManyData = 3;
         dataNumberButton.textContent = "データを減らす";
-        dataNumberButton.style.fontSize = "10px";
       } else {
         this.howManyData = 2;
         dataNumberButton.textContent = "データを増やす";
-        dataNumberButton.style.fontSize = "10px";
       }
 
       //複数データ追加の場合↓
@@ -1742,15 +1886,64 @@ export default {
           });
         }
         if (!isChecked) {
-          this.intResult = Math.round(this.result);
-          this.digit = this.intResult.toString().length;
-          if (this.result >= 1000) {
-            this.roundDigit = this.digit - 2;
-            while (this.digitUnitCoeff < this.digit - 4) {
-              this.digitUnitCoeff = this.digitUnitCoeff + 4;
+          this.adjustedResult = this.result;
+          if (Number.isInteger(this.result)) {
+            this.digit = this.result.toString().length;
+            if (this.digit >= 6) {
+              if (this.degree !== 1) {
+                this.adjustedResult =
+                  Math.round(this.result / 10 ** (this.digit - 5)) *
+                  10 ** (this.digit - 5);
+              }
+              this.roundDigit = this.digit - 2;
+            } else {
+              if (this.digit <= 2) {
+                this.roundDigit = 0;
+              } else {
+                this.roundDigit = this.digit - 2;
+              }
             }
           } else {
-            this.roundDigit = this.digit - 3;
+            this.digit = this.result.toString().length - 1;
+            if (this.digit >= 6) {
+              if (this.degree !== 1) {
+                if (this.result > 10000) {
+                  let count = 0;
+                  while (this.adjustedResult > 100000) {
+                    this.adjustedResult = this.adjustedResult / 10;
+                    count = count + 1;
+                  }
+                  this.adjustedResult =
+                    Math.round(this.adjustedResult) * 10 ** count;
+                  this.digit = 5 + count;
+                } else {
+                  let count = 0;
+                  while (this.adjustedResult < 10000) {
+                    this.adjustedResult = this.adjustedResult * 10;
+                    count = count + 1;
+                  }
+                  this.adjustedResult =
+                    Math.round(this.adjustedResult) / 10 ** count;
+                  this.digit = 5;
+                }
+              }
+              this.roundDigit = this.digit - 2;
+            } else {
+              this.adjustedResult = this.result;
+              if (this.digit <= 2) {
+                this.roundDigit = 0;
+              } else {
+                this.roundDigit = this.digit - 2;
+              }
+            }
+          }
+          this.digitUnitCoeff = 0;
+          let unitCheck = this.result;
+          if (!Number.isInteger(unitCheck)) {
+            unitCheck = Math.round(unitCheck);
+          }
+          while (this.digitUnitCoeff < unitCheck.toString().length - 4) {
+            this.digitUnitCoeff = this.digitUnitCoeff + 4;
           }
 
           this.round();
@@ -1776,14 +1969,20 @@ export default {
       }
     },
     digitDown() {
-      if (
-        this.roundDigit >=
-        this.intResult.toString().length - this.result.toString().length
-      ) {
-        this.roundDigit = this.roundDigit - 1;
-        this.round();
+      if (!this.isGuess && this.showingData.degree === 1) {
+        if (this.roundDigit >= 1) {
+          this.roundDigit = this.roundDigit - 1;
+          this.round();
+        } else {
+          alert("これ以上正確度を上げられません。");
+        }
       } else {
-        alert("これ以上正確度を上げられません。");
+        if (this.roundDigit >= this.digit - 4) {
+          this.roundDigit = this.roundDigit - 1;
+          this.round();
+        } else {
+          alert("これ以上正確度を上げられません。");
+        }
       }
     },
     async next() {
@@ -1814,7 +2013,7 @@ export default {
       this.secondData = "";
       this.thirdData = "";
       this.discription = "";
-      this.intResult = 0;
+      this.adjustedResult = 0;
       this.digit = 0;
       this.roundDigit = 0;
       this.digitUnitCoeff = 0;
@@ -1995,75 +2194,42 @@ export default {
       }
     },
     help() {
-      const helpShadow = document.querySelector(".help-shadow");
-      if (!this.ishelp) {
-        helpShadow.style.zIndex = 1;
-        helpShadow.style.opacity = 0.7;
-        this.ishelp = !this.ishelp;
-        if (!this.isGuess) {
-          this.helpIndex = 8;
-        } else {
-          this.helpIndex = 0;
+      if (this.ishelp) {
+        this.helpText = "ガイドONにする";
+        if (window.matchMedia(`(max-width: 450px)`).matches) {
+          document.querySelector(
+            ".floating-help-button"
+          ).style.backgroundColor = "#dddddd";
         }
-        this.goHelp();
       } else {
-        helpShadow.style.zIndex = -1;
-        helpShadow.style.opacity = 0;
-        let helpBoxes = document.querySelectorAll(".help-box");
-        let helps = document.querySelectorAll(".help");
-        let changeBox = helpBoxes[this.helpIndex];
-        let deleteCard = helps[this.helpIndex];
-        changeBox.style.zIndex = 0;
-        deleteCard.style.display = "none";
-        deleteCard.style.opacity = 0;
-        deleteCard.style.zIndex = -1;
-        this.helpIndex = 0;
-        this.helpDeleteIndex = -1;
-        this.ishelp = !this.ishelp;
-      }
-    },
-    helpOpe() {
-      if (this.isGuess) {
-        switch (this.helpIndex) {
-          case 0:
-            this.title = "秋田県の二酸化炭素排出量";
-            break;
-          case 2:
-            this.firstData = "秋田県の人口データ";
-            break;
-          case 3:
-            this.operator = "×";
-            break;
-          case 4:
-            this.secondData = "一人当たり二酸化炭素排出量";
-            break;
-          case 5:
-            this.unit = "キログラム";
-            break;
+        this.helpText = "ガイドOFFにする";
+        if (window.matchMedia(`(max-width: 450px)`).matches) {
+          document.querySelector(
+            ".floating-help-button"
+          ).style.backgroundColor = "#ff9158";
         }
       }
+      this.ishelp = !this.ishelp;
     },
-    nextHelp() {
-      this.helpDeleteIndex = this.helpIndex;
-      this.helpIndex = this.helpIndex + 1;
-      this.goHelp();
+    hover() {
+      if (this.ishelp) {
+        const helpBox = event.target.nextElementSibling;
+        event.target.setAttribute(
+          "style",
+          "transform: scale(1.1); transition-duration: 0.5s;"
+        );
+        helpBox.style.display = "flex";
+      }
     },
-    prevHelp() {
-      this.helpDeleteIndex = this.helpIndex;
-      this.helpIndex = this.helpIndex - 1;
-      this.goHelp();
-    },
-
-    //開発用関数
-    test_auto() {
-      this.title = "てすと３";
-      this.firstData = "ギリギリデータ";
-      this.operator = "×";
-      this.secondData = "小数点データ";
-      this.unit = "キログラム";
-    },
-    goDev() {
-      this.$router.push("/database");
+    leave() {
+      if (this.ishelp) {
+        const helpBox = event.target.nextElementSibling;
+        event.target.setAttribute(
+          "style",
+          "transform: scale(1); transition-duration: 0.5s;"
+        );
+        helpBox.style.display = "none";
+      }
     },
   },
 };
@@ -2081,7 +2247,7 @@ export default {
 }
 
 #app {
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", sans-serif, "JKゴシック";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -2444,6 +2610,7 @@ export default {
   background: linear-gradient(to right, #cccccc, #7aaecc);
   width: 100%;
   box-sizing: border-box;
+  transition-duration: 0.5s;
 }
 ._box-tint {
   display: flex;
@@ -2459,6 +2626,7 @@ export default {
   background: linear-gradient(to right, #ffffff, #99daff);
   width: 100%;
   box-sizing: border-box;
+  transition-duration: 0.5s;
 }
 ._box-shade h2,
 ._box-tint h2 {
@@ -2473,6 +2641,7 @@ export default {
   box-shadow: 2px 2px 5px #3c3c3c;
   background: linear-gradient(to right, #ffff00, #99daff);
   box-sizing: border-box;
+  transition-duration: 0.5s;
 }
 ._square {
   width: 12vw;
@@ -2483,12 +2652,15 @@ export default {
 ._square h3 {
   display: block;
   font-size: min(5vh, 3vw);
+  transition-duration: 0.5s;
 }
 
 .main-title-box {
   display: flex;
+  transition-duration: 0.5s;
 }
 .main-title-box * {
+  transition-duration: 0.5s;
   display: block;
   font-size: 2vw;
   font-style: italic;
@@ -2702,31 +2874,58 @@ export default {
 /* ここまでメイン詳細 */
 
 /* ヘルプ関連 */
-.help-shadow {
-  background-color: #333333;
-  opacity: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  width: 100vw;
-  height: 100vh;
-  transition-duration: 1s;
-}
-.help-box {
+.help-at {
   position: relative;
-  z-index: 0;
 }
-.help {
+.help-content {
+  position: absolute;
   display: none;
-  position: relative;
-  background-color: #dddddd;
-  opacity: 0;
-  z-index: -1;
-  transition-duration: 1s;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+  background-color: #ff9158;
+  height: 40px;
+  padding: 0 6px 0 6px;
+  width: max(100%, 20vw);
+  border-radius: 0.5vw;
 }
-
-.data-area {
+.help-content h3 {
+  display: block;
+  font-size: max(12px, 1.2vw);
+}
+.under {
+  bottom: -2.5vw;
+}
+.help-input {
+  bottom: -65px;
+  left: -5%;
+}
+.over {
+  top: -2.5vw;
+}
+.under::before,
+.help-input::before {
+  content: "";
+  border: 10px solid transparent;
+  border-bottom: 10px solid #ff9158;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.help-input::before {
+  left: 20%;
+}
+.over::before {
+  content: "";
+  border: 10px solid transparent;
+  border-top: 10px solid #ff9158;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.floating-help-button {
   display: none;
 }
 
@@ -3478,32 +3677,36 @@ export default {
   /* ここまでメイン詳細 */
 
   /* ヘルプ関連 */
-  .help-shadow {
-    background-color: #333333;
-    opacity: 0;
+  .help-content {
+    width: max(100%, 50vw);
+  }
+  .under {
+    bottom: -35px;
+  }
+  .over {
+    top: -35px;
+  }
+  .floating-help-button {
     position: fixed;
+    display: block;
+    z-index: 4;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 100%;
+    box-shadow: 2px 2px 5px #3c3c3c;
+    background-color: #ff9158;
+  }
+  .floating-help-button h2 {
+    position: absolute;
+    font-size: 40px;
+    left: 20px;
     top: 0;
-    left: 0;
-    z-index: -1;
-    width: 100vw;
-    height: 100vh;
-    transition-duration: 1s;
   }
-  .help-box {
-    position: relative;
-    z-index: 0;
-  }
-  .help {
-    display: none;
-    position: relative;
-    background-color: #dddddd;
-    opacity: 0;
-    z-index: -1;
-    transition-duration: 1s;
-  }
-
-  .data-area {
-    display: none;
+  .floating-help-button h3 {
+    margin-top: 37px;
+    font-size: 15px;
   }
 }
 </style>
